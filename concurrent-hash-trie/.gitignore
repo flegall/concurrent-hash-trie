@@ -1,0 +1,6 @@
+# Compiled source #
+###################
+*.class
+*.jar
+output/*
+bin/*
