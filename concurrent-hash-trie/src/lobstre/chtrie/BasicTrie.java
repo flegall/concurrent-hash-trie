@@ -1,4 +1,4 @@
-package com.lobstre.chtrie;
+package lobstre.chtrie;
 
 import java.util.concurrent.atomic.AtomicReference;
 
