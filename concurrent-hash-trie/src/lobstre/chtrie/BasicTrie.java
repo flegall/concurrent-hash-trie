@@ -1,5 +1,6 @@
 package lobstre.chtrie;
 
+import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BasicTrie {
@@ -40,12 +41,12 @@ public class BasicTrie {
     }
     
     static class FlagPos {
-        FlagPos (final long flag, final int position) {
+        FlagPos (final int flag, final int position) {
             this.flag = flag;
             this.position = position;
         }
-        private final long flag;
-        private final int position;
+        public final int flag;
+        public final int position;
     }
     
     public static void insert (final RootNode root, final Object k, final Object v) {
@@ -63,13 +64,20 @@ public class BasicTrie {
         return r.main.get () != null;
     }
     
-    static FlagPos flagPos (int hc, int level, long bitmap) {
-        final long flag = (hc >> level) & ((1 << (level)) - 1);
-        final int pos = (int) (bitCount (flag - 1) & bitmap);
+    static FlagPos flagPos (final int hc, final int level, final long bitmap, final int w) {
+        final int bitsRemaining = Math.min (w, 32 - level);
+        final int flag = (hc >> level) & ((1 << bitsRemaining) - 1);
+        final int highestOneBit = Integer.highestOneBit (flag);
+        final int pos;
+        if (highestOneBit != 0) {
+            pos = Long.bitCount (((long) (highestOneBit - 1)) & bitmap);
+        } else {
+            pos = 0;
+        }
         return new FlagPos (flag, pos);
     }
 
-    static long bitCount (long v) {
+    static long bitCount (final long v) {
         return Long.bitCount (v);
     }
 }
