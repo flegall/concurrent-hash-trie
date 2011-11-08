@@ -38,6 +38,9 @@ public class TestBasicTrie {
         
         assertEquals (4L, BasicTrie.flagPos (256 + 4, 6, 3L, 6).flag);
         assertEquals (2, BasicTrie.flagPos (256 + 4, 6, 3L, 6).position);
+        
+        assertEquals (63, BasicTrie.flagPos (-1, 6, Long.MIN_VALUE, 6).flag);
+        assertEquals (4, BasicTrie.flagPos (-1, 6, 15, 6).position);
     }
 
     private static void assertEquals (long expected, long found) {
