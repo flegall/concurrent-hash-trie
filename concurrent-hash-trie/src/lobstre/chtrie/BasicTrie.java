@@ -72,7 +72,7 @@ public class BasicTrie {
     private static boolean iinsert(final int width, final INode i, final Object k, final Object v, final int level, final Object parent) {
     	final MainNode main = i.main.get();
     	if (main instanceof CNode) {
-    		final FlagPos flagPos = flagPos(k.hashCode(), level, ((CNode) main).bitmap, width);
+    		final FlagPos flagPos = flagPos (k.hashCode (), level, ((CNode) main).bitmap, width);
     		if (0 == (flagPos.flag & ((CNode) main).bitmap)) {
     			final SNode snode = new SNode (k, v, false);
     			final ArrayNode [] narr = inserted (((CNode) main).array, flagPos.position, snode);
