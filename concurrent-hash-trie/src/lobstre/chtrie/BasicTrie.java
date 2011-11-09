@@ -76,7 +76,7 @@ public class BasicTrie {
 
     private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode snode) {
         final ArrayNode[] narr = new ArrayNode[array.length];
-        for (int i = 0; i < array.length + 1; i++) {
+        for (int i = 0; i < array.length; i++) {
             if (i == position) {
                 narr [i] = snode;
             } else {
@@ -101,7 +101,7 @@ public class BasicTrie {
     }
 
     static boolean isNullInode (final INode r) {
-        return r.main.get () != null;
+        return r.main.get () == null;
     }
 
     static FlagPos flagPos (final int hc, final int level, final long bitmap, final int w) {
