@@ -82,8 +82,37 @@ public class BasicTrie {
                 final CNode ncn = new CNode (narr, flagPos.flag | cn.bitmap);
                 return i.main.compareAndSet (main, ncn);
             }
+            final ArrayNode an = cn.array [flagPos.position];
+            if (an instanceof INode) {
+                final INode in = (INode) an;
+                return iinsert (width, in, k, v, level + width, parent);
+            }
+            if (an instanceof SNode && !((SNode) an).tomb) {
+                final SNode sn = (SNode) an;
+                final SNode nsn = new SNode (k, v, false);
+                if (sn.key.equals (k)) {
+                    final ArrayNode[] narr = updated (cn.array, flagPos.position, nsn);
+                    final CNode ncn = new CNode (narr, flagPos.flag | cn.bitmap);
+                    return i.main.compareAndSet (main, ncn);
+                } else {
+                    final FlagPos nfp = flagPos (k.hashCode (), level + width, cn.bitmap, width);
+                    // Insert new INode based on next level flag & position
+                }
+            }
         }
         return false;
+    }
+
+    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final SNode snode) {
+        final ArrayNode[] narr = new ArrayNode[array.length];
+        for (int i = 0; i < array.length + 1; i++) {
+            if (i == position) {
+                narr [i] = snode;
+            } else {
+                narr [i] = array [i];
+            }
+        }
+        return narr;
     }
 
     private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final SNode snode) {
