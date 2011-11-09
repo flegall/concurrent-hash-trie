@@ -41,11 +41,11 @@ public class BasicTrie {
     }
     
     static class FlagPos {
-        FlagPos (final int flag, final int position) {
+        FlagPos (final long flag, final int position) {
             this.flag = flag;
             this.position = position;
         }
-        public final int flag;
+        public final long flag;
         public final int position;
     }
     
@@ -66,14 +66,9 @@ public class BasicTrie {
     
     static FlagPos flagPos (final int hc, final int level, final long bitmap, final int w) {
         final int bitsRemaining = Math.min (w, 32 - level);
-        final int flag = (hc >> level) & ((1 << bitsRemaining) - 1);
-        final int highestOneBit = Integer.highestOneBit (flag);
-        final int pos;
-        if (highestOneBit != 0) {
-            pos = Long.bitCount (((long) (highestOneBit - 1)) & bitmap);
-        } else {
-            pos = 0;
-        }
+        final int subHash = (hc >> level) & ((1 << bitsRemaining) - 1);
+        final long flag = 1L << (long) subHash;
+        final int pos = Long.bitCount((flag - 1) & bitmap);
         return new FlagPos (flag, pos);
     }
 
