@@ -14,11 +14,13 @@ public class BasicTrie {
     public void insert (final Object k, final Object v) {
         final INode r = root.get ();
         if (r == null || isNullInode (r)) {
+            // Insertion on an empty trie.
             final CNode cn = new CNode (new SNode (k, v, false));
             final INode nr = new INode (cn);
             if (!root.compareAndSet (r, nr)) {
                 insert (k, v);
             }
+            // Else tries inserting in a populated trie
         } else if (!iinsert (r, k, v, 0, null)) {
             insert (k, v);
         }
