@@ -104,7 +104,17 @@ public class BasicTrie {
                 }
             }
         }
+        if (main instanceof SNode || main == null) {
+            if (parent != null) {
+                clean (parent);
+            }
+            return false;
+        }
         return false;
+    }
+
+    private static void clean (INode parent) {
+        // TODO
     }
 
     private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode snode) {
