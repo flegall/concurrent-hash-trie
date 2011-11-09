@@ -88,13 +88,13 @@ public class BasicTrie {
 
     private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode snode) {
         final ArrayNode[] narr = new ArrayNode[array.length + 1];
-        for (int i = 0; i < array.length + 1; i++) {
+        for (int i = 0; i < array.length; i++) {
             if (i < position) {
                 narr [i] = array [i];
             } else if (i == position) {
                 narr [i] = snode;
             } else {
-                narr [i] = array [i + 1];
+                narr [i] = array [i - 1];
             }
         }
         return narr;
