@@ -26,8 +26,10 @@ public class BasicTrie {
         }
     }
 
-    private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
+    private boolean iinsert (final INode i, final Object k, final Object v, 
+            final int level, final INode parent) {
         final MainNode main = i.main.get ();
+        
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, width);

@@ -1,6 +1,6 @@
 package lobstre.chtrie;
 
-public class TestBasicTrie {
+public class TestFlagPos {
     public static void main (String[] args) {
         assertEquals (1L, BasicTrie.flagPos (0, 0, 0L, 6).flag);
         assertEquals (0, BasicTrie.flagPos (0, 0, 0L, 6).position);
