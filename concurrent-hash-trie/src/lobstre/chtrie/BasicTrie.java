@@ -71,7 +71,7 @@ public class BasicTrie {
         }
     }
 
-    private static boolean iinsert (final int width, final INode i, final Object k, final Object v, final int level, final Object parent) {
+    private static boolean iinsert (final int width, final INode i, final Object k, final Object v, final int level, final INode parent) {
         final MainNode main = i.main.get ();
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
@@ -85,25 +85,29 @@ public class BasicTrie {
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 final INode in = (INode) an;
-                return iinsert (width, in, k, v, level + width, parent);
+                return iinsert (width, in, k, v, level + width, i);
             }
             if (an instanceof SNode && !((SNode) an).tomb) {
                 final SNode sn = (SNode) an;
                 final SNode nsn = new SNode (k, v, false);
                 if (sn.key.equals (k)) {
                     final ArrayNode[] narr = updated (cn.array, flagPos.position, nsn);
-                    final CNode ncn = new CNode (narr, flagPos.flag | cn.bitmap);
+                    final CNode ncn = new CNode (narr, cn.bitmap);
                     return i.main.compareAndSet (main, ncn);
                 } else {
-                    final FlagPos nfp = flagPos (k.hashCode (), level + width, cn.bitmap, width);
-                    // Insert new INode based on next level flag & position
+                    final FlagPos sfp = flagPos (k.hashCode (), level + width, 0L, width);
+                    final CNode scn = new CNode (new ArrayNode [] {nsn}, sfp.flag);
+                    final INode nin = new INode (scn);
+                    final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
+                    final CNode ncn = new CNode (narr, cn.bitmap);
+                    return i.main.compareAndSet (main, ncn);
                 }
             }
         }
         return false;
     }
 
-    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final SNode snode) {
+    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode snode) {
         final ArrayNode[] narr = new ArrayNode[array.length];
         for (int i = 0; i < array.length + 1; i++) {
             if (i == position) {
@@ -115,7 +119,7 @@ public class BasicTrie {
         return narr;
     }
 
-    private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final SNode snode) {
+    private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode snode) {
         final ArrayNode[] narr = new ArrayNode[array.length + 1];
         for (int i = 0; i < array.length + 1; i++) {
             if (i < position) {
