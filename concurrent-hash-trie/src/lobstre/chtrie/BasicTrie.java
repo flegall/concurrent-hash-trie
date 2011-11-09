@@ -48,8 +48,7 @@ public class BasicTrie {
                 final SNode sn = (SNode) an;
                 final SNode nsn = new SNode (k, v, false);
                 if (sn.key.equals (k)) {
-                    final ArrayNode[] narr = updated (cn.array, flagPos.position, nsn);
-                    final CNode ncn = new CNode (narr, cn.bitmap);
+                    final CNode ncn = cn.updated (flagPos.position, nsn);
                     return i.main.compareAndSet (main, ncn);
                 } else {
                     final FlagPos sfp = flagPos (k.hashCode (), level + width, 0L, width);
@@ -132,6 +131,11 @@ public class BasicTrie {
             this.bitmap = 1L;
         }
     
+        public CNode updated (int position, SNode nsn) {
+            final ArrayNode[] narr = BasicTrie.updated (array, position, nsn);
+            return new CNode (narr, bitmap);
+        }
+
         CNode(final ArrayNode[] array, final long bitmap) {
             this.array = array;
             this.bitmap = bitmap;
