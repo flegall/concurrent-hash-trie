@@ -64,7 +64,7 @@ public class BasicTrie {
             }
             return false;
         }
-        return false;
+        throw new RuntimeException ("Found CNODE/SNODE.tomb!");
     }
 
     private void clean (final INode parent) {
