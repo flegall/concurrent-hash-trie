@@ -12,5 +12,7 @@ public class TestInsert {
         for (int i = 0;  i < 128; i++) {
             bt.insert (Integer.valueOf (i), Integer.valueOf (i));
         }
+        
+        bt.toString ();
     }
 }

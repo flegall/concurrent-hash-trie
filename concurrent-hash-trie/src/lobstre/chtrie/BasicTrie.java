@@ -26,10 +26,9 @@ public class BasicTrie {
         }
     }
 
-    private boolean iinsert (final INode i, final Object k, final Object v, 
-            final int level, final INode parent) {
+    private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
         final MainNode main = i.main.get ();
-        
+
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, width);
@@ -51,8 +50,7 @@ public class BasicTrie {
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     return i.main.compareAndSet (main, ncn);
                 } else {
-                    final FlagPos sfp = flagPos (k.hashCode (), level + width, 0L, width);
-                    final CNode scn = new CNode (new ArrayNode[] { nsn }, sfp.flag);
+                    final CNode scn = new CNode (sn, nsn, level + this.width);
                     final INode nin = new INode (scn);
                     final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
                     final CNode ncn = new CNode (narr, cn.bitmap);
@@ -87,7 +85,7 @@ public class BasicTrie {
 
     private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode snode) {
         final ArrayNode[] narr = new ArrayNode[array.length + 1];
-        for (int i = 0; i < array.length; i++) {
+        for (int i = 0; i < array.length + 1; i++) {
             if (i < position) {
                 narr [i] = array [i];
             } else if (i == position) {
@@ -121,16 +119,28 @@ public class BasicTrie {
         public INode(final MainNode n) {
             this.main = new AtomicReference<MainNode> (n);
         }
-    
+
         public final AtomicReference<MainNode> main;
     }
 
-    static class CNode implements MainNode {
+    class CNode implements MainNode {
         CNode(final SNode sNode) {
+            final FlagPos flagPos = BasicTrie.flagPos (sNode.key.hashCode (), 0, 0L, BasicTrie.this.width);
             this.array = new ArrayNode[] { sNode };
-            this.bitmap = 1L;
+            this.bitmap = flagPos.flag;
         }
-    
+        
+        CNode (final SNode sn1, final SNode sn2, int level) {
+            final FlagPos fp1 = BasicTrie.flagPos (sn1.key.hashCode (), level, 0L, BasicTrie.this.width);
+            final FlagPos fp2 = BasicTrie.flagPos (sn2.key.hashCode (), level, 0L, BasicTrie.this.width);
+            if (fp1.position < fp2.position) {
+                this.array = new ArrayNode[] { sn1, sn2 };
+            } else {
+                this.array = new ArrayNode[] { sn2, sn1 };
+            }
+            this.bitmap = fp1.flag | fp2.flag;
+        }
+
         public CNode updated (int position, SNode nsn) {
             final ArrayNode[] narr = BasicTrie.updated (array, position, nsn);
             return new CNode (narr, bitmap);
@@ -140,7 +150,7 @@ public class BasicTrie {
             this.array = array;
             this.bitmap = bitmap;
         }
-    
+
         public final long bitmap;
         public final ArrayNode[] array;
     }
@@ -151,7 +161,7 @@ public class BasicTrie {
             this.value = v;
             this.tomb = tomb;
         }
-    
+
         public final Object key;
         public final Object value;
         public final boolean tomb;
@@ -162,7 +172,7 @@ public class BasicTrie {
             this.flag = flag;
             this.position = position;
         }
-    
+
         public final long flag;
         public final int position;
     }
