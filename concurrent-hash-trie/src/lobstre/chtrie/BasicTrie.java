@@ -29,12 +29,15 @@ public class BasicTrie {
     public Object lookup (final Object k) {
         final INode r = this.root.get ();
         if (null == r) {
+            // Empty trie
             return null;
         } else if (isNullInode (r)) {
+            // Null Inode trie, fix it and retry
             this.root.compareAndSet (r, null);
             return lookup (k);
         } else {
-            Result res = ilookup (r, k, 0, null);
+            // Getting lookup result
+            final Result res = ilookup (r, k, 0, null);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -43,34 +46,43 @@ public class BasicTrie {
             case RESTART:
                 return lookup (k);
             default:
-                throw new RuntimeException ("Unexpected case: "+res.type);
+                throw new RuntimeException ("Unexpected case: " + res.type);
             }
         }
     }
 
-    private Result ilookup (INode i, Object k, int level, INode parent) {
+    private Result ilookup (final INode i, final Object k, final int level, final INode parent) {
         final MainNode main = i.main.get ();
+
+        // Usual case
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+
+            // Asked for a hash not in trie
             if (0 == (flagPos.flag & cn.bitmap)) {
-                return new Result (ResultType.NOTFOUND, null);    
+                return new Result (ResultType.NOTFOUND, null);
             }
+
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
+                // Looking down
                 final INode sin = (INode) an;
-                return ilookup (sin, k, level + width, i);
+                return ilookup (sin, k, level + this.width, i);
             }
             if (an instanceof SNode && !((SNode) an).tomb) {
+                // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
                     return new Result (ResultType.FOUND, sn.value);
                 } else {
-                    return new Result (ResultType.NOTFOUND, null);    
+                    return new Result (ResultType.NOTFOUND, null);
                 }
             }
         }
-        if ((main instanceof SNode && ((SNode)main).tomb) || main == null) {
+        
+        // Cleaning up trie
+        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -82,26 +94,34 @@ public class BasicTrie {
     private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
         final MainNode main = i.main.get ();
 
+        // Usual case
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+            
+            // Asked for a hash not in trie, let's insert it
             if (0 == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v, false);
                 final CNode ncn = cn.inserted (flagPos, snode);
                 return i.main.compareAndSet (main, ncn);
             }
+            
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
+                // Looking down
                 final INode sin = (INode) an;
                 return iinsert (sin, k, v, level + this.width, i);
             }
             if (an instanceof SNode && !((SNode) an).tomb) {
                 final SNode sn = (SNode) an;
                 final SNode nsn = new SNode (k, v, false);
+                // Found the hash locally, let's see if it matches
                 if (sn.key.equals (k)) {
+                    // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     return i.main.compareAndSet (main, ncn);
                 } else {
+                    // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
                     final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
@@ -110,7 +130,9 @@ public class BasicTrie {
                 }
             }
         }
-        if ((main instanceof SNode && ((SNode)main).tomb) || main == null) {
+        
+        // Cleaning up trie
+        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -181,9 +203,7 @@ public class BasicTrie {
     }
 
     static enum ResultType {
-        FOUND,
-        NOTFOUND,
-        RESTART
+        FOUND, NOTFOUND, RESTART
     }
 
     static class Result {
