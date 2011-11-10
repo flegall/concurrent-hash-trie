@@ -9,7 +9,7 @@ public class TestInsert {
         bt.insert ("d", "b");
         bt.insert ("e", "b");
         
-        for (int i = 0;  i < 128; i++) {
+        for (int i = 0;  i < 10000; i++) {
             bt.insert (Integer.valueOf (i), Integer.valueOf (i));
         }
         

@@ -34,8 +34,7 @@ public class BasicTrie {
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
             if (0 == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v, false);
-                final ArrayNode[] narr = inserted (cn.array, flagPos.position, snode);
-                final CNode ncn = new CNode (narr, flagPos.flag | cn.bitmap);
+                final CNode ncn = cn.inserted (flagPos, snode);
                 return i.main.compareAndSet (main, ncn);
             }
             final ArrayNode an = cn.array [flagPos.position];
@@ -102,11 +101,16 @@ public class BasicTrie {
     }
 
     static FlagPos flagPos (final int hc, final int level, final long bitmap, final int w) {
+        final long flag = flag (hc, level, w);
+        final int pos = Long.bitCount (flag - 1 & bitmap);
+        return new FlagPos (flag, pos);
+    }
+
+    static long flag (final int hc, final int level, final int w) {
         final int bitsRemaining = Math.min (w, 32 - level);
         final int subHash = hc >> level & (1 << bitsRemaining) - 1;
         final long flag = 1L << subHash;
-        final int pos = Long.bitCount (flag - 1 & bitmap);
-        return new FlagPos (flag, pos);
+        return flag;
     }
 
     static interface MainNode {
@@ -125,20 +129,26 @@ public class BasicTrie {
 
     static class CNode implements MainNode {
         CNode(final SNode sNode, final int width) {
-            final FlagPos flagPos = BasicTrie.flagPos (sNode.key.hashCode (), 0, 0L, width);
+            final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
             this.array = new ArrayNode[] { sNode };
-            this.bitmap = flagPos.flag;
+            this.bitmap = flag;
         }
 
+
         CNode(final SNode sn1, final SNode sn2, final int level, final int width) {
-            final FlagPos fp1 = BasicTrie.flagPos (sn1.key.hashCode (), level, 0L, width);
-            final FlagPos fp2 = BasicTrie.flagPos (sn2.key.hashCode (), level, 0L, width);
-            if (fp1.flag < fp2.flag) {
+            final long flag1 = BasicTrie.flag (sn1.key.hashCode (), level, width);
+            final long flag2 = BasicTrie.flag (sn2.key.hashCode (), level, width);
+            if (flag1 < flag2) {
                 this.array = new ArrayNode[] { sn1, sn2 };
             } else {
                 this.array = new ArrayNode[] { sn2, sn1 };
             }
-            this.bitmap = fp1.flag | fp2.flag;
+            this.bitmap = flag1 | flag2;
+        }
+        
+        public CNode inserted (FlagPos flagPos, SNode snode) {
+            final ArrayNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
+            return new CNode (narr, flagPos.flag | this.bitmap);
         }
 
         public CNode updated (final int position, final SNode nsn) {
