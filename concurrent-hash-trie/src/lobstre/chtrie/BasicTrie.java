@@ -12,12 +12,12 @@ public class BasicTrie {
     }
 
     public void insert (final Object k, final Object v) {
-        final INode r = root.get ();
+        final INode r = this.root.get ();
         if (r == null || isNullInode (r)) {
             // Insertion on an empty trie.
-            final CNode cn = new CNode (new SNode (k, v, false));
+            final CNode cn = new CNode (new SNode (k, v, false), this.width);
             final INode nr = new INode (cn);
-            if (!root.compareAndSet (r, nr)) {
+            if (!this.root.compareAndSet (r, nr)) {
                 insert (k, v);
             }
             // Else tries inserting in a populated trie
@@ -31,7 +31,7 @@ public class BasicTrie {
 
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
-            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, width);
+            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
             if (0 == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v, false);
                 final ArrayNode[] narr = inserted (cn.array, flagPos.position, snode);
@@ -41,7 +41,7 @@ public class BasicTrie {
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 final INode in = (INode) an;
-                return iinsert (in, k, v, level + width, i);
+                return iinsert (in, k, v, level + this.width, i);
             }
             if (an instanceof SNode && !((SNode) an).tomb) {
                 final SNode sn = (SNode) an;
@@ -50,7 +50,7 @@ public class BasicTrie {
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     return i.main.compareAndSet (main, ncn);
                 } else {
-                    final CNode scn = new CNode (sn, nsn, level + this.width);
+                    final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
                     final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
                     final CNode ncn = new CNode (narr, cn.bitmap);
@@ -67,7 +67,7 @@ public class BasicTrie {
         return false;
     }
 
-    private void clean (INode parent) {
+    private void clean (final INode parent) {
         // TODO
     }
 
@@ -123,17 +123,17 @@ public class BasicTrie {
         public final AtomicReference<MainNode> main;
     }
 
-    class CNode implements MainNode {
-        CNode(final SNode sNode) {
-            final FlagPos flagPos = BasicTrie.flagPos (sNode.key.hashCode (), 0, 0L, BasicTrie.this.width);
+    static class CNode implements MainNode {
+        CNode(final SNode sNode, final int width) {
+            final FlagPos flagPos = BasicTrie.flagPos (sNode.key.hashCode (), 0, 0L, width);
             this.array = new ArrayNode[] { sNode };
             this.bitmap = flagPos.flag;
         }
-        
-        CNode (final SNode sn1, final SNode sn2, int level) {
-            final FlagPos fp1 = BasicTrie.flagPos (sn1.key.hashCode (), level, 0L, BasicTrie.this.width);
-            final FlagPos fp2 = BasicTrie.flagPos (sn2.key.hashCode (), level, 0L, BasicTrie.this.width);
-            if (fp1.position < fp2.position) {
+
+        CNode(final SNode sn1, final SNode sn2, final int level, final int width) {
+            final FlagPos fp1 = BasicTrie.flagPos (sn1.key.hashCode (), level, 0L, width);
+            final FlagPos fp2 = BasicTrie.flagPos (sn2.key.hashCode (), level, 0L, width);
+            if (fp1.flag < fp2.flag) {
                 this.array = new ArrayNode[] { sn1, sn2 };
             } else {
                 this.array = new ArrayNode[] { sn2, sn1 };
@@ -141,9 +141,9 @@ public class BasicTrie {
             this.bitmap = fp1.flag | fp2.flag;
         }
 
-        public CNode updated (int position, SNode nsn) {
-            final ArrayNode[] narr = BasicTrie.updated (array, position, nsn);
-            return new CNode (narr, bitmap);
+        public CNode updated (final int position, final SNode nsn) {
+            final ArrayNode[] narr = BasicTrie.updated (this.array, position, nsn);
+            return new CNode (narr, this.bitmap);
         }
 
         CNode(final ArrayNode[] array, final long bitmap) {
