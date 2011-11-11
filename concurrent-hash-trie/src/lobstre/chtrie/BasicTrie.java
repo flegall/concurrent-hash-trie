@@ -50,6 +50,31 @@ public class BasicTrie {
             }
         }
     }
+    
+    public boolean remove (final Object k) {
+        final INode r = this.root.get ();
+        if (null == r) {
+            // Empty trie
+            return false;
+        } else if (isNullInode (r)) {
+            // Null Inode trie, fix it and retry
+            this.root.compareAndSet (r, null);
+            return remove (k);
+        } else {
+            // Getting remove result
+            final Result res = iremove (r, k, 0, null);
+            switch (res.type) {
+            case FOUND:
+                return true;
+            case NOTFOUND:
+                return false;
+            case RESTART:
+                return remove (k);
+            default:
+                throw new RuntimeException ("Unexpected case: " + res.type);
+            }
+        }
+    }
 
     private Result ilookup (final INode i, final Object k, final int level, final INode parent) {
         final MainNode main = i.main.get ();
@@ -137,6 +162,46 @@ public class BasicTrie {
                 clean (parent);
             }
             return false;
+        }
+        throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+    }
+    
+    private Result iremove (final INode i, final Object k, final int level, final INode parent) {
+        final MainNode main = i.main.get ();
+
+        // Usual case
+        if (main instanceof CNode) {
+            final CNode cn = (CNode) main;
+            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+
+            // Asked for a hash not in trie
+            if (0 == (flagPos.flag & cn.bitmap)) {
+                return new Result (ResultType.NOTFOUND, null);
+            }
+
+            final ArrayNode an = cn.array [flagPos.position];
+            if (an instanceof INode) {
+                // Looking down
+                final INode sin = (INode) an;
+                return iremove (sin, k, level + this.width, i);
+            }
+            if (an instanceof SNode && !((SNode) an).tomb) {
+                // Found the hash locally, let's see if it matches
+                final SNode sn = (SNode) an;
+                if (sn.key.equals (k)) {
+                    // TODO : Implement removal
+                } else {
+                    return new Result (ResultType.NOTFOUND, null);
+                }
+            }
+        }
+        
+        // Cleaning up trie
+        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
+            if (parent != null) {
+                clean (parent);
+            }
+            return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Found CNODE/SNODE.tomb!");
     }
