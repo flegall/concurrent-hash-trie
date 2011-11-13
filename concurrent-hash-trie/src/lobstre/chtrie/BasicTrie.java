@@ -179,11 +179,12 @@ public class BasicTrie {
                 return new Result (ResultType.NOTFOUND, null);
             }
 
+            Result res = null;
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                return iremove (sin, k, level + this.width, i);
+                res = iremove (sin, k, level + this.width, i);
             }
             if (an instanceof SNode && !((SNode) an).tomb) {
                 // Found the hash locally, let's see if it matches
@@ -191,9 +192,19 @@ public class BasicTrie {
                 if (sn.key.equals (k)) {
                     // TODO : Implement removal
                 } else {
-                    return new Result (ResultType.NOTFOUND, null);
+                    res = new Result (ResultType.NOTFOUND, null);
                 }
             }
+            if (null == res) {
+                throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+            }
+            if (res.type == ResultType.NOTFOUND || res.type == ResultType.RESTART) {
+                return res;
+            }
+            if (parent != null && tombCompress (i)) {
+                contractParent (parent, i, k.hashCode (), level - width);
+            }
+            return res;
         }
         
         // Cleaning up trie
@@ -204,6 +215,16 @@ public class BasicTrie {
             return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+    }
+
+    private void contractParent (INode parent, INode i, int hashCode, int j) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private boolean tombCompress (INode i) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     private void clean (final INode parent) {
