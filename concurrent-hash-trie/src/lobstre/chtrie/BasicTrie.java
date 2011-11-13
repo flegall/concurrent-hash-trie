@@ -3,14 +3,32 @@ package lobstre.chtrie;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class BasicTrie {
+    /**
+     * Width in bits
+     */
     private final int width;
+
+    /**
+     * Root node of the trie
+     */
     private final AtomicReference<INode> root;
 
+    /**
+     * Builds a {@link BasicTrie} instance
+     */
     public BasicTrie () {
         this.width = 6;
         this.root = new AtomicReference<INode> ();
     }
 
+    /**
+     * Inserts or updates a key/value mapping.
+     * 
+     * @param k
+     *            a key {@link Object}
+     * @param v
+     *            a value Object
+     */
     public void insert (final Object k, final Object v) {
         final INode r = this.root.get ();
         if (r == null || isNullInode (r)) {
@@ -26,6 +44,13 @@ public class BasicTrie {
         }
     }
 
+    /**
+     * Looks up the value associated to a key
+     * 
+     * @param k
+     *            a key {@link Object}
+     * @return the value associated to k
+     */
     public Object lookup (final Object k) {
         final INode r = this.root.get ();
         if (null == r) {
@@ -50,7 +75,14 @@ public class BasicTrie {
             }
         }
     }
-    
+
+    /**
+     * Removes a key/value mapping
+     * 
+     * @param k
+     *            the key Object
+     * @return true if removed was performed, false otherwises
+     */
     public boolean remove (final Object k) {
         final INode r = this.root.get ();
         if (null == r) {
@@ -105,7 +137,7 @@ public class BasicTrie {
                 }
             }
         }
-        
+
         // Cleaning up trie
         if (main instanceof SNode && ((SNode) main).tomb || main == null) {
             if (parent != null) {
@@ -123,14 +155,14 @@ public class BasicTrie {
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
-            
+
             // Asked for a hash not in trie, let's insert it
             if (0 == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v, false);
                 final CNode ncn = cn.inserted (flagPos, snode);
                 return i.main.compareAndSet (main, ncn);
             }
-            
+
             final ArrayNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 // Looking down
@@ -155,7 +187,7 @@ public class BasicTrie {
                 }
             }
         }
-        
+
         // Cleaning up trie
         if (main instanceof SNode && ((SNode) main).tomb || main == null) {
             if (parent != null) {
@@ -165,7 +197,7 @@ public class BasicTrie {
         }
         throw new RuntimeException ("Found CNODE/SNODE.tomb!");
     }
-    
+
     private Result iremove (final INode i, final Object k, final int level, final INode parent) {
         final MainNode main = i.main.get ();
 
@@ -206,7 +238,7 @@ public class BasicTrie {
             }
             return res;
         }
-        
+
         // Cleaning up trie
         if (main instanceof SNode && ((SNode) main).tomb || main == null) {
             if (parent != null) {
@@ -218,12 +250,11 @@ public class BasicTrie {
     }
 
     private void contractParent (INode parent, INode i, int hashCode, int j) {
-        // TODO Auto-generated method stub
-        
+        // TODO
     }
 
     private boolean tombCompress (INode i) {
-        // TODO Auto-generated method stub
+        // TODO
         return false;
     }
 
@@ -231,11 +262,23 @@ public class BasicTrie {
         // TODO
     }
 
-    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode snode) {
+    /**
+     * Returns a copy an {@link ArrayNode} array with an updated
+     * {@link ArrayNode} value at a certain position.
+     * 
+     * @param array
+     *            the source {@link ArrayNode} array
+     * @param position
+     *            the position
+     * @param n
+     *            the updated {@link ArrayNode} value
+     * @return an updated copy of the source {@link ArrayNode} array
+     */
+    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode n) {
         final ArrayNode[] narr = new ArrayNode[array.length];
         for (int i = 0; i < array.length; i++) {
             if (i == position) {
-                narr [i] = snode;
+                narr [i] = n;
             } else {
                 narr [i] = array [i];
             }
@@ -243,13 +286,25 @@ public class BasicTrie {
         return narr;
     }
 
-    private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode snode) {
+    /**
+     * Returns a copy an {@link ArrayNode} array with an inserted
+     * {@link ArrayNode} value at a certain position.
+     * 
+     * @param array
+     *            the source {@link ArrayNode} array
+     * @param position
+     *            the position
+     * @param n
+     *            the inserted {@link ArrayNode} value
+     * @return an updated copy of the source {@link ArrayNode} array
+     */
+    private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode n) {
         final ArrayNode[] narr = new ArrayNode[array.length + 1];
         for (int i = 0; i < array.length + 1; i++) {
             if (i < position) {
                 narr [i] = array [i];
             } else if (i == position) {
-                narr [i] = snode;
+                narr [i] = n;
             } else {
                 narr [i] = array [i - 1];
             }
@@ -257,16 +312,48 @@ public class BasicTrie {
         return narr;
     }
 
-    static boolean isNullInode (final INode r) {
-        return r.main.get () == null;
+    /**
+     * Returns <code>true</code> if the {@link INode} contains a Null reference
+     * 
+     * @param i
+     *            an {@link INode} instance
+     * @return true
+     */
+    static boolean isNullInode (final INode i) {
+        return i.main.get () == null;
     }
 
+    /**
+     * Gets the flag value and insert position for an hashcode, level & bitmap.
+     * 
+     * @param hc
+     *            the hashcode value
+     * @param level
+     *            the level (in bit progression)
+     * @param bitmap
+     *            the current {@link CNode}'s bitmap.
+     * @param w
+     *            the fan width (in bits)
+     * @return a {@link FlagPos}'s instance for the specified hashcode, level &
+     *         bitmap.
+     */
     static FlagPos flagPos (final int hc, final int level, final long bitmap, final int w) {
         final long flag = flag (hc, level, w);
         final int pos = Long.bitCount (flag - 1 & bitmap);
         return new FlagPos (flag, pos);
     }
 
+    /**
+     * Gets the flag value for an hashcode level.
+     * 
+     * @param hc
+     *            the hashcode value
+     * @param level
+     *            the level (in bit progression)
+     * @param the
+     *            fan width (in bits)
+     * @return the flag value
+     */
     static long flag (final int hc, final int level, final int w) {
         final int bitsRemaining = Math.min (w, 32 - level);
         final int subHash = hc >> level & (1 << bitsRemaining) - 1;
@@ -274,13 +361,28 @@ public class BasicTrie {
         return flag;
     }
 
+    /**
+     * A Marker interface for what can be in an INode (CNode or SNode)
+     */
     static interface MainNode {
     }
 
+    /**
+     * A Marker interface for what can be in a CNode array. (INode or SNode)
+     */
     static interface ArrayNode {
     }
 
+    /**
+     * A CAS-able Node which may reference either a CNode or and SNode
+     */
     static class INode implements ArrayNode {
+        /**
+         * Builds an {@link INode} instance
+         * 
+         * @param n
+         *            a {@link MainNode}
+         */
         public INode (final MainNode n) {
             this.main = new AtomicReference<MainNode> (n);
         }
