@@ -4,3 +4,7 @@
 *.jar
 output/*
 bin/*
+
+
+# Mac stuff
+.DS_Store
