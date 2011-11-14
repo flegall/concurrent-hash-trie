@@ -222,7 +222,12 @@ public class BasicTrie {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
-                    // TODO : Implement removal
+                    final CNode ncn = cn.removed (flagPos);
+                    if (i.main.compareAndSet (cn, ncn)) {
+                        res = new Result (ResultType.FOUND, sn.value);
+                    } else {
+                        res = new Result (ResultType.RESTART, null);
+                    }
                 } else {
                     res = new Result (ResultType.NOTFOUND, null);
                 }
@@ -307,6 +312,28 @@ public class BasicTrie {
                 narr [i] = n;
             } else {
                 narr [i] = array [i - 1];
+            }
+        }
+        return narr;
+    }
+
+    /**
+     * Returns a copy an {@link ArrayNode} array with a removed
+     * {@link ArrayNode} value at a certain position.
+     * 
+     * @param array
+     *            the source {@link ArrayNode} array
+     * @param position
+     *            the position
+     * @return an updated copy of the source {@link ArrayNode} array
+     */
+    private static ArrayNode[] removed (final ArrayNode[] array, final int position) {
+        final ArrayNode[] narr = new ArrayNode[array.length - 1];
+        for (int i = 0; i < array.length; i++) {
+            if (i < position) {
+                narr [i] = array [i];
+            } else if (i > position) {
+                narr [i - 1] = array [i];
             }
         }
         return narr;
@@ -405,6 +432,26 @@ public class BasicTrie {
     }
 
     static class CNode implements MainNode {
+        public CNode inserted (final FlagPos flagPos, final SNode snode) {
+            final ArrayNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
+            return new CNode (narr, flagPos.flag | this.bitmap);
+        }
+
+        public CNode updated (final int position, final SNode nsn) {
+            final ArrayNode[] narr = BasicTrie.updated (this.array, position, nsn);
+            return new CNode (narr, this.bitmap);
+        }
+
+        public CNode removed (final FlagPos flagPos) {
+            final ArrayNode[] narr = BasicTrie.removed (this.array, flagPos.position);
+            if (narr.length == 0) {
+                return null;
+            } else {
+                return new CNode (narr, this.bitmap - flagPos.flag);
+            }
+        }
+
+        public final long bitmap;
         CNode (final SNode sNode, final int width) {
             final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
             this.array = new ArrayNode[] { sNode };
@@ -422,22 +469,11 @@ public class BasicTrie {
             this.bitmap = flag1 | flag2;
         }
 
-        public CNode inserted (final FlagPos flagPos, final SNode snode) {
-            final ArrayNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
-            return new CNode (narr, flagPos.flag | this.bitmap);
-        }
-
-        public CNode updated (final int position, final SNode nsn) {
-            final ArrayNode[] narr = BasicTrie.updated (this.array, position, nsn);
-            return new CNode (narr, this.bitmap);
-        }
-
         CNode (final ArrayNode[] array, final long bitmap) {
             this.array = array;
             this.bitmap = bitmap;
         }
 
-        public final long bitmap;
         public final ArrayNode[] array;
     }
 
