@@ -254,10 +254,6 @@ public class BasicTrie {
         throw new RuntimeException ("Found CNODE/SNODE.tomb!");
     }
 
-    private void contractParent (final INode parent, final INode i, final int hashCode, final int j) {
-        // TODO
-    }
-
     private boolean tombCompress (final INode i) {
         final MainNode m = i.main.get ();
         
@@ -266,8 +262,21 @@ public class BasicTrie {
             return false;
         }
         
+        final CNode mwt = toWeakTombed (m);
+        if (m == mwt) {
+            return false;
+        }
         
         return false;
+    }
+
+    private CNode toWeakTombed (MainNode m) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    private void contractParent (final INode parent, final INode i, final int hashCode, final int j) {
+        // TODO
     }
 
     private void clean (final INode parent) {
