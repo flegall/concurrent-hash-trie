@@ -239,7 +239,7 @@ public class BasicTrie {
                 return res;
             }
             if (parent != null && tombCompress (i)) {
-                contractParent (parent, i, k.hashCode (), level - width);
+                contractParent (parent, i, k.hashCode (), level - this.width);
             }
             return res;
         }
@@ -254,12 +254,19 @@ public class BasicTrie {
         throw new RuntimeException ("Found CNODE/SNODE.tomb!");
     }
 
-    private void contractParent (INode parent, INode i, int hashCode, int j) {
+    private void contractParent (final INode parent, final INode i, final int hashCode, final int j) {
         // TODO
     }
 
-    private boolean tombCompress (INode i) {
-        // TODO
+    private boolean tombCompress (final INode i) {
+        final MainNode m = i.main.get ();
+        
+        // No need to compress is not a CNode
+        if (!(m instanceof CNode)) {
+            return false;
+        }
+        
+        
         return false;
     }
 
@@ -279,7 +286,7 @@ public class BasicTrie {
      *            the updated {@link ArrayNode} value
      * @return an updated copy of the source {@link ArrayNode} array
      */
-    private static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode n) {
+    static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode n) {
         final ArrayNode[] narr = new ArrayNode[array.length];
         for (int i = 0; i < array.length; i++) {
             if (i == position) {
@@ -303,7 +310,7 @@ public class BasicTrie {
      *            the inserted {@link ArrayNode} value
      * @return an updated copy of the source {@link ArrayNode} array
      */
-    private static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode n) {
+    static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode n) {
         final ArrayNode[] narr = new ArrayNode[array.length + 1];
         for (int i = 0; i < array.length + 1; i++) {
             if (i < position) {
@@ -327,7 +334,7 @@ public class BasicTrie {
      *            the position
      * @return an updated copy of the source {@link ArrayNode} array
      */
-    private static ArrayNode[] removed (final ArrayNode[] array, final int position) {
+    static ArrayNode[] removed (final ArrayNode[] array, final int position) {
         final ArrayNode[] narr = new ArrayNode[array.length - 1];
         for (int i = 0; i < array.length; i++) {
             if (i < position) {
@@ -452,6 +459,7 @@ public class BasicTrie {
         }
 
         public final long bitmap;
+
         CNode (final SNode sNode, final int width) {
             final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
             this.array = new ArrayNode[] { sNode };
