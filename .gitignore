@@ -2,8 +2,8 @@
 ###################
 *.class
 *.jar
-output/*
-bin/*
+concurrent-hash-trie/output/*
+concurrent-hash-trie/bin/*
 
 
 # Mac stuff
