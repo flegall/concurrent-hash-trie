@@ -263,10 +263,10 @@ public class BasicTrie {
         }
 
         final MainNode mwt = toWeakTombed ((CNode) m);
+        
         if (m == mwt) {
             return false;
-        }
-        if (i.main.compareAndSet (m, mwt)) {
+        } else if (i.main.compareAndSet (m, mwt)) {
             if (mwt == null ||
                     (mwt instanceof SNode && ((SNode)mwt).tomb)) {
                 return true;
