@@ -266,14 +266,24 @@ public class BasicTrie {
         if (m == mwt) {
             return false;
         }
-
-        return false;
+        if (i.main.compareAndSet (m, mwt)) {
+            if (mwt == null ||
+                    (mwt instanceof SNode && ((SNode)mwt).tomb)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return tombCompress (i);
+        }
     }
 
     private MainNode toWeakTombed (final CNode cn) {
         final Filtered f = cn.filtered (new Predicate () {
             public boolean accepts (final ArrayNode an) {
-                return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
+                return isSingleton (an) || 
+                        (an instanceof INode && 
+                                ((INode) an).main.get () != null);
             }
         });
         if (f.nodes.length > 1) {
