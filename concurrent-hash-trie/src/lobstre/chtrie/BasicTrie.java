@@ -517,10 +517,11 @@ public class BasicTrie {
                 if (0L != (filteredBitmap & flag)) {
                     filtered[copied++] = this.array[traversed];
                 }
-                if (0L != (filteredBitmap & this.bitmap)) {
+                if (0L != (this.bitmap & flag)) {
                     traversed++;
                 }
             }
+            
             return new Filtered (filtered, filteredBitmap);
         }
 
