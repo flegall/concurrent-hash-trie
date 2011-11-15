@@ -497,22 +497,31 @@ public class BasicTrie {
         }
 
         public Filtered filtered (final Predicate predicate) {
-            final ArrayNode[] filtered = new ArrayNode[this.array.length];
             int traversed = 0;
-            int copied = 0;
             long filteredBitmap = 0L;
             for (int i = 0; i < 64; i++) {
                 final long flag = 1 << i;
                 if (0L != (this.bitmap & flag)) {
                     final ArrayNode an = this.array [traversed++];
                     if (predicate.accepts (an)) {
-                        filtered [copied++] = an;
                         filteredBitmap += flag;
                     }
                 }
             }
-            final ArrayNode[] finalFiltered = new ArrayNode[copied];
-            return new Filtered (finalFiltered, filteredBitmap);
+            
+            traversed = 0;
+            int copied = 0;
+            final ArrayNode[] filtered = new ArrayNode[Long.bitCount (filteredBitmap)];
+            for (int i = 0; i < 64; i++) {
+                final long flag = 1 << i;
+                if (0L != (filteredBitmap & flag)) {
+                    filtered[copied++] = this.array[traversed];
+                }
+                if (0L != (filteredBitmap & this.bitmap)) {
+                    traversed++;
+                }
+            }
+            return new Filtered (filtered, filteredBitmap);
         }
 
         public final long bitmap;
