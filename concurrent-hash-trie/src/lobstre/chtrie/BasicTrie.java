@@ -127,7 +127,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return ilookup (sin, k, level + this.width, i);
             }
-            if (an instanceof SNode && !((SNode) an).tomb) {
+            if (isSingleton (an) && !((SNode) an).tomb) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -169,7 +169,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return iinsert (sin, k, v, level + this.width, i);
             }
-            if (an instanceof SNode && !((SNode) an).tomb) {
+            if (isSingleton (an) && !((SNode) an).tomb) {
                 final SNode sn = (SNode) an;
                 final SNode nsn = new SNode (k, v, false);
                 // Found the hash locally, let's see if it matches
@@ -218,7 +218,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 res = iremove (sin, k, level + this.width, i);
             }
-            if (an instanceof SNode && !((SNode) an).tomb) {
+            if (isSingleton (an) && !((SNode) an).tomb) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -256,23 +256,42 @@ public class BasicTrie {
 
     private boolean tombCompress (final INode i) {
         final MainNode m = i.main.get ();
-        
+
         // No need to compress is not a CNode
         if (!(m instanceof CNode)) {
             return false;
         }
-        
-        final CNode mwt = toWeakTombed (m);
+
+        final MainNode mwt = toWeakTombed ((CNode) m);
         if (m == mwt) {
             return false;
         }
-        
+
         return false;
     }
 
-    private CNode toWeakTombed (MainNode m) {
-        // TODO Auto-generated method stub
-        return null;
+    private MainNode toWeakTombed (final CNode cn) {
+        final Filtered f = cn.filtered (new Predicate () {
+            public boolean accepts (final ArrayNode an) {
+                return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
+            }
+        });
+        if (f.nodes.length > 1) {
+            return cn;
+        } else if (f.nodes.length == 1) {
+            final ArrayNode n = f.nodes [0];
+            if (isSingleton (n)) {
+                return ((SNode) n).tombed ();
+            } else {
+                return new CNode (f.nodes, f.bitmap);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private boolean isSingleton (final ArrayNode n) {
+        return n instanceof SNode;
     }
 
     private void contractParent (final INode parent, final INode i, final int hashCode, final int j) {
@@ -467,6 +486,25 @@ public class BasicTrie {
             }
         }
 
+        public Filtered filtered (final Predicate predicate) {
+            final ArrayNode[] filtered = new ArrayNode[this.array.length];
+            int traversed = 0;
+            int copied = 0;
+            long filteredBitmap = 0L;
+            for (int i = 0; i < 64; i++) {
+                final long flag = 1 << i;
+                if (0L != (this.bitmap & flag)) {
+                    final ArrayNode an = this.array [traversed++];
+                    if (predicate.accepts (an)) {
+                        filtered [copied++] = an;
+                        filteredBitmap += flag;
+                    }
+                }
+            }
+            final ArrayNode[] finalFiltered = new ArrayNode[copied];
+            return new Filtered (finalFiltered, filteredBitmap);
+        }
+
         public final long bitmap;
 
         CNode (final SNode sNode, final int width) {
@@ -501,6 +539,10 @@ public class BasicTrie {
             this.tomb = tomb;
         }
 
+        public SNode tombed () {
+            return new SNode (this.key, this.value, true);
+        }
+
         public final Object key;
         public final Object value;
         public final boolean tomb;
@@ -514,5 +556,19 @@ public class BasicTrie {
 
         public final long flag;
         public final int position;
+    }
+
+    static class Filtered {
+        public Filtered (final ArrayNode[] nodes, final long bitmap) {
+            this.nodes = nodes;
+            this.bitmap = bitmap;
+        }
+
+        public final ArrayNode[] nodes;
+        public final long bitmap;
+    }
+
+    static interface Predicate {
+        public boolean accepts (ArrayNode an);
     }
 }
