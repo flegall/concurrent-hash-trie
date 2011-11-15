@@ -509,9 +509,10 @@ public class BasicTrie {
                 }
             }
             
+            final ArrayNode[] filtered = new ArrayNode [Long.bitCount (filteredBitmap)];
+
             traversed = 0;
             int copied = 0;
-            final ArrayNode[] filtered = new ArrayNode[Long.bitCount (filteredBitmap)];
             for (int i = 0; i < 64; i++) {
                 final long flag = 1 << i;
                 if (0L != (filteredBitmap & flag)) {
