@@ -300,7 +300,7 @@ public class BasicTrie {
     private boolean isSingleton (final ArrayNode n) {
         return n instanceof SNode;
     }
-    
+
     private boolean isSingleton (final MainNode n) {
         return n instanceof SNode;
     }
@@ -314,10 +314,10 @@ public class BasicTrie {
             if (0 == (flagPos.flag & cn.bitmap)) {
                 return;
             }
-            ArrayNode sub = cn.array [flagPos.position];
+            final ArrayNode sub = cn.array [flagPos.position];
             if (sub != i) {
                 return;
-            } 
+            }
             if (null == m) {
                 final CNode ncn = cn.removed (flagPos);
                 if (!parent.main.compareAndSet (cn, ncn)) {
@@ -337,15 +337,30 @@ public class BasicTrie {
     }
 
     private void clean (final INode i) {
-        MainNode m = i.main.get ();
+        final MainNode m = i.main.get ();
         if (m instanceof CNode) {
             i.main.compareAndSet (m, toCompressed ((CNode) m));
         }
     }
 
-    private CNode toCompressed (CNode m) {
-        // TODO Auto-generated method stub
+    private MainNode toCompressed (final CNode m) {
+        final int num = Long.bitCount (m.bitmap);
+        if (num == 1 && isTombInode (m.array [0])) {
+            return ((INode) m.array [0]).main.get ();
+        }
         return null;
+    }
+
+    private boolean isTombInode (final ArrayNode an) {
+        if (an instanceof INode) {
+            final INode in = (INode) an;
+            final MainNode mn = in.main.get ();
+            if (mn instanceof SNode) {
+                final SNode sn = (SNode) mn;
+                return sn.tomb;
+            }
+        }
+        return false;
     }
 
     /**
