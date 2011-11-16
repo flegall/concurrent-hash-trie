@@ -263,12 +263,11 @@ public class BasicTrie {
         }
 
         final MainNode mwt = toWeakTombed ((CNode) m);
-        
+
         if (m == mwt) {
             return false;
         } else if (i.main.compareAndSet (m, mwt)) {
-            if (mwt == null ||
-                    (mwt instanceof SNode && ((SNode)mwt).tomb)) {
+            if (mwt == null || mwt instanceof SNode && ((SNode) mwt).tomb) {
                 return true;
             } else {
                 return false;
@@ -281,9 +280,7 @@ public class BasicTrie {
     private MainNode toWeakTombed (final CNode cn) {
         final CNode f = cn.filtered (new Predicate () {
             public boolean accepts (final ArrayNode an) {
-                return isSingleton (an) || 
-                        (an instanceof INode && 
-                                ((INode) an).main.get () != null);
+                return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
             }
         });
         if (f.array.length > 1) {
@@ -303,9 +300,40 @@ public class BasicTrie {
     private boolean isSingleton (final ArrayNode n) {
         return n instanceof SNode;
     }
+    
+    private boolean isSingleton (final MainNode n) {
+        return n instanceof SNode;
+    }
 
-    private void contractParent (final INode parent, final INode i, final int hashCode, final int j) {
-        // TODO
+    private void contractParent (final INode parent, final INode i, final int hashCode, final int level) {
+        final MainNode m = i.main.get ();
+        final MainNode pm = parent.main.get ();
+        if (pm instanceof CNode) {
+            final CNode cn = (CNode) pm;
+            final FlagPos flagPos = flagPos (hashCode, level, cn.bitmap, this.width);
+            if (0 == (flagPos.flag & cn.bitmap)) {
+                return;
+            }
+            ArrayNode sub = cn.array [flagPos.position];
+            if (sub != i) {
+                return;
+            } 
+            if (null == m) {
+                final CNode ncn = cn.removed (flagPos);
+                if (!parent.main.compareAndSet (cn, ncn)) {
+                    contractParent (parent, i, hashCode, level);
+                }
+            } else {
+                if (isSingleton (m)) {
+                    final CNode ncn = cn.updated (flagPos.position, (SNode) m);
+                    if (!parent.main.compareAndSet (cn, ncn)) {
+                        contractParent (parent, i, hashCode, level);
+                    } else {
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     private void clean (final INode parent) {
@@ -508,21 +536,21 @@ public class BasicTrie {
                     }
                 }
             }
-            
-            final ArrayNode[] filtered = new ArrayNode [Long.bitCount (filteredBitmap)];
+
+            final ArrayNode[] filtered = new ArrayNode[Long.bitCount (filteredBitmap)];
 
             traversed = 0;
             int copied = 0;
             for (int i = 0; i < 64; i++) {
                 final long flag = 1 << i;
                 if (0L != (filteredBitmap & flag)) {
-                    filtered[copied++] = this.array[traversed];
+                    filtered [copied++] = this.array [traversed];
                 }
                 if (0L != (this.bitmap & flag)) {
                     traversed++;
                 }
             }
-            
+
             return new CNode (filtered, filteredBitmap);
         }
 
