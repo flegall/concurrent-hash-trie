@@ -279,21 +279,21 @@ public class BasicTrie {
     }
 
     private MainNode toWeakTombed (final CNode cn) {
-        final Filtered f = cn.filtered (new Predicate () {
+        final CNode f = cn.filtered (new Predicate () {
             public boolean accepts (final ArrayNode an) {
                 return isSingleton (an) || 
                         (an instanceof INode && 
                                 ((INode) an).main.get () != null);
             }
         });
-        if (f.nodes.length > 1) {
+        if (f.array.length > 1) {
             return cn;
-        } else if (f.nodes.length == 1) {
-            final ArrayNode n = f.nodes [0];
+        } else if (f.array.length == 1) {
+            final ArrayNode n = f.array [0];
             if (isSingleton (n)) {
                 return ((SNode) n).tombed ();
             } else {
-                return new CNode (f.nodes, f.bitmap);
+                return new CNode (f.array, f.bitmap);
             }
         } else {
             return null;
@@ -496,7 +496,7 @@ public class BasicTrie {
             }
         }
 
-        public Filtered filtered (final Predicate predicate) {
+        public CNode filtered (final Predicate predicate) {
             int traversed = 0;
             long filteredBitmap = 0L;
             for (int i = 0; i < 64; i++) {
@@ -523,10 +523,8 @@ public class BasicTrie {
                 }
             }
             
-            return new Filtered (filtered, filteredBitmap);
+            return new CNode (filtered, filteredBitmap);
         }
-
-        public final long bitmap;
 
         CNode (final SNode sNode, final int width) {
             final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
@@ -551,6 +549,7 @@ public class BasicTrie {
         }
 
         public final ArrayNode[] array;
+        public final long bitmap;
     }
 
     static class SNode implements MainNode, ArrayNode {
@@ -577,16 +576,6 @@ public class BasicTrie {
 
         public final long flag;
         public final int position;
-    }
-
-    static class Filtered {
-        public Filtered (final ArrayNode[] nodes, final long bitmap) {
-            this.nodes = nodes;
-            this.bitmap = bitmap;
-        }
-
-        public final ArrayNode[] nodes;
-        public final long bitmap;
     }
 
     static interface Predicate {
