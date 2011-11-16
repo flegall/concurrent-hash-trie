@@ -336,8 +336,16 @@ public class BasicTrie {
         }
     }
 
-    private void clean (final INode parent) {
-        // TODO
+    private void clean (final INode i) {
+        MainNode m = i.main.get ();
+        if (m instanceof CNode) {
+            i.main.compareAndSet (m, toCompressed ((CNode) m));
+        }
+    }
+
+    private CNode toCompressed (CNode m) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /**
