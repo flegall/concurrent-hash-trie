@@ -278,11 +278,7 @@ public class BasicTrie {
     }
 
     private MainNode toWeakTombed (final CNode cn) {
-        final CNode f = cn.filtered (new Predicate () {
-            public boolean accepts (final ArrayNode an) {
-                return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
-            }
-        });
+        final CNode f = cn.filtered (singletonNonNullInodeFilter);
         if (f.array.length > 1) {
             return cn;
         } else if (f.array.length == 1) {
@@ -343,12 +339,26 @@ public class BasicTrie {
         }
     }
 
-    private MainNode toCompressed (final CNode m) {
-        final int num = Long.bitCount (m.bitmap);
-        if (num == 1 && isTombInode (m.array [0])) {
-            return ((INode) m.array [0]).main.get ();
+    private MainNode toCompressed (final CNode cn) {
+        final int num = Long.bitCount (cn.bitmap);
+        if (num == 1 && isTombInode (cn.array [0])) {
+            return ((INode) cn.array [0]).main.get ();
         }
-        return null;
+        
+        final CNode ncn = cn.filtered (singletonNonNullInodeFilter);
+        for (int i = 0; i < ncn.array.length; i++) {
+            final ArrayNode an = ncn.array [i];
+            if (isTombInode (an)) {
+                ncn.array [i] = (INode)
+                        ((INode) an).main.get ();
+            }
+        }
+        
+        if (Long.bitCount (ncn.bitmap) > 0) {
+            return ncn;
+        } else {
+            return null;
+        }
     }
 
     private boolean isTombInode (final ArrayNode an) {
@@ -362,6 +372,12 @@ public class BasicTrie {
         }
         return false;
     }
+
+    private final Predicate singletonNonNullInodeFilter = new Predicate () {
+        public boolean accepts (final ArrayNode an) {
+            return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
+        }
+    };
 
     /**
      * Returns a copy an {@link ArrayNode} array with an updated
