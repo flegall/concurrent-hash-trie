@@ -4,14 +4,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class BasicTrie {
     /**
-     * Width in bits
-     */
-    private final int width;
-
-    /**
      * Root node of the trie
      */
     private final AtomicReference<INode> root;
+
+    /**
+     * Width in bits
+     */
+    private final byte width;
 
     /**
      * Builds a {@link BasicTrie} instance
@@ -19,6 +19,34 @@ public class BasicTrie {
     public BasicTrie () {
         this.width = 6;
         this.root = new AtomicReference<INode> ();
+    }
+
+    /**
+     * Builds a {@link BasicTrie} instance
+     * 
+     * @param width
+     *            the Trie width in power-of-two exponents. Values are expected
+     *            between between 1 & 6, other values will be clamped.
+     *            <p>
+     *            The width defines the "speed" of the trie:
+     *            <ul>
+     *            <li>A value of 1: gives
+     *            an actual width of two items per level, hence the trie is
+     *            O(Log2(N))</li>
+     *            <li>A value of 6: gives
+     *            an actual width of 64 items per level, hence the trie is
+     *            O(Log64(N)</li>
+     *            </ul>
+     */
+    public BasicTrie (final int width) {
+        this.root = new AtomicReference<INode> ();
+        if (width > 6) {
+            this.width = 6;
+        } else if (width < 1) {
+            this.width = 1;
+        } else {
+            this.width = (byte) width;
+        }
     }
 
     /**
@@ -278,7 +306,7 @@ public class BasicTrie {
     }
 
     private MainNode toWeakTombed (final CNode cn) {
-        final CNode f = cn.filtered (singletonNonNullInodeFilter);
+        final CNode f = cn.filtered (singletonNonNullInodeFilter ());
         if (f.array.length > 1) {
             return cn;
         } else if (f.array.length == 1) {
@@ -344,16 +372,15 @@ public class BasicTrie {
         if (num == 1 && isTombInode (cn.array [0])) {
             return ((INode) cn.array [0]).main.get ();
         }
-        
-        final CNode ncn = cn.filtered (singletonNonNullInodeFilter);
+
+        final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
         for (int i = 0; i < ncn.array.length; i++) {
             final ArrayNode an = ncn.array [i];
             if (isTombInode (an)) {
-                ncn.array [i] = (INode)
-                        ((INode) an).main.get ();
+                ncn.array [i] = (INode) ((INode) an).main.get ();
             }
         }
-        
+
         if (Long.bitCount (ncn.bitmap) > 0) {
             return ncn;
         } else {
@@ -373,11 +400,13 @@ public class BasicTrie {
         return false;
     }
 
-    private final Predicate singletonNonNullInodeFilter = new Predicate () {
-        public boolean accepts (final ArrayNode an) {
-            return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
-        }
-    };
+    private Predicate singletonNonNullInodeFilter () {
+        return new Predicate () {
+            public boolean accepts (final ArrayNode an) {
+                return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
+            }
+        };
+    }
 
     /**
      * Returns a copy an {@link ArrayNode} array with an updated
@@ -629,7 +658,7 @@ public class BasicTrie {
         public SNode tombed () {
             return new SNode (this.key, this.value, true);
         }
-        
+
         public SNode untombed () {
             return new SNode (this.key, this.value, false);
         }
