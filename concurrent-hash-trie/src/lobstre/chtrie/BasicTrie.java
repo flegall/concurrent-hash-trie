@@ -567,7 +567,7 @@ public class BasicTrie {
             int traversed = 0;
             long filteredBitmap = 0L;
             for (int i = 0; i < 64; i++) {
-                final long flag = 1 << i;
+                final long flag = 1L << i;
                 if (0L != (this.bitmap & flag)) {
                     final ArrayNode an = this.array [traversed++];
                     if (predicate.accepts (an)) {
@@ -581,7 +581,7 @@ public class BasicTrie {
             traversed = 0;
             int copied = 0;
             for (int i = 0; i < 64; i++) {
-                final long flag = 1 << i;
+                final long flag = 1L << i;
                 if (0L != (filteredBitmap & flag)) {
                     filtered [copied++] = this.array [traversed];
                 }
