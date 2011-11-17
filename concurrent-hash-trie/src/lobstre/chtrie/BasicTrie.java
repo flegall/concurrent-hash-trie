@@ -553,6 +553,9 @@ public class BasicTrie {
             this.main = new AtomicReference<MainNode> (n);
         }
 
+        /**
+         * The {@link AtomicReference} instance
+         */
         public final AtomicReference<MainNode> main;
     }
 
@@ -570,17 +573,46 @@ public class BasicTrie {
         public final ResultType type;
     }
 
+    /**
+     * A Node that may contain sub-nodes.
+     */
     static class CNode implements MainNode {
+        /**
+         * Builds a copy of this {@link CNode} instance where a sub-node
+         * designated by a position has been added .
+         * 
+         * @param flagPos
+         *            a FlagPos instance
+         * @return a copy of this {@link CNode} instance with the inserted node.
+         */
         public CNode inserted (final FlagPos flagPos, final SNode snode) {
             final ArrayNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
             return new CNode (narr, flagPos.flag | this.bitmap);
         }
 
+        /**
+         * Builds a copy of this {@link CNode} instance where a sub-node
+         * designated by a position has been replaced by another one.
+         * 
+         * @param position
+         *            an integer position
+         * @return a copy of this {@link CNode} instance with the updated node.
+         */
         public CNode updated (final int position, final SNode nsn) {
             final ArrayNode[] narr = BasicTrie.updated (this.array, position, nsn);
             return new CNode (narr, this.bitmap);
         }
 
+        /**
+         * Builds a copy of this {@link CNode} instance where a sub-node
+         * designated by flag & a position has been removed.
+         * 
+         * @param flagPos
+         *            a {@link FlagPos} instance
+         * @return a copy of this {@link CNode} instance where where a sub-node
+         *         designated by flag & a position has been removed or null if
+         *         the resulting CNode would be empty.
+         */
         public CNode removed (final FlagPos flagPos) {
             final ArrayNode[] narr = BasicTrie.removed (this.array, flagPos.position);
             if (narr.length == 0) {
@@ -590,14 +622,24 @@ public class BasicTrie {
             }
         }
 
-        public CNode filtered (final Filter predicate) {
+        /**
+         * Builds a copy of this {@link CNode} instance where its sub-nodes have
+         * been filtered.
+         * 
+         * @param filter
+         *            a {@link Filter} instance
+         * @return a copy of this {@link CNode} instance where its sub-nodes
+         *         have been filtered, or null if the resulting CNode would be
+         *         empty.
+         */
+        public CNode filtered (final Filter filter) {
             int traversed = 0;
             long filteredBitmap = 0L;
             for (int i = 0; i < 64; i++) {
                 final long flag = 1L << i;
                 if (0L != (this.bitmap & flag)) {
                     final ArrayNode an = this.array [traversed++];
-                    if (predicate.accepts (an)) {
+                    if (filter.accepts (an)) {
                         filteredBitmap += flag;
                     }
                 }
@@ -617,15 +659,39 @@ public class BasicTrie {
                 }
             }
 
-            return new CNode (filtered, filteredBitmap);
+            if (filteredBitmap != 0L) {
+                return new CNode (filtered, filteredBitmap);
+            } else {
+                return null;
+            }
         }
 
+        /**
+         * Builds a {@link CNode} instance from a single {@link SNode} instance
+         * 
+         * @param sNode
+         *            a {@link SNode} instance
+         * @param width
+         *            the width (in power-of-two exponents)
+         */
         CNode (final SNode sNode, final int width) {
             final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
             this.array = new ArrayNode[] { sNode };
             this.bitmap = flag;
         }
 
+        /**
+         * Builds a {@link CNode} instance from two {@link SNode} objects
+         * 
+         * @param sn1
+         *            a first {@link SNode} instance
+         * @param sn2
+         *            a second {@link SNode} instance
+         * @param level
+         *            the current level (in bit progression)
+         * @param width
+         *            the width (in power-of-two exponents)
+         */
         CNode (final SNode sn1, final SNode sn2, final int level, final int width) {
             final long flag1 = BasicTrie.flag (sn1.key.hashCode (), level, width);
             final long flag2 = BasicTrie.flag (sn2.key.hashCode (), level, width);
@@ -637,12 +703,28 @@ public class BasicTrie {
             this.bitmap = flag1 | flag2;
         }
 
+        /**
+         * Builds a {@link CNode} from an array of {@link ArrayNode} and its
+         * computed bitmap.
+         * 
+         * @param array
+         *            the {@link ArrayNode} array
+         * @param bitmap
+         *            the bitmap
+         */
         CNode (final ArrayNode[] array, final long bitmap) {
             this.array = array;
             this.bitmap = bitmap;
         }
 
+        /**
+         * The internal {@link ArrayNode} array.
+         */
         public final ArrayNode[] array;
+
+        /**
+         * The bitmap of the currently allocated objects.
+         */
         public final long bitmap;
     }
 
