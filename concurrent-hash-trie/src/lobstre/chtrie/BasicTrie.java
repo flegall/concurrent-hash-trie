@@ -30,12 +30,10 @@ public class BasicTrie {
      *            <p>
      *            The width defines the "speed" of the trie:
      *            <ul>
-     *            <li>A value of 1: gives
-     *            an actual width of two items per level, hence the trie is
-     *            O(Log2(N))</li>
-     *            <li>A value of 6: gives
-     *            an actual width of 64 items per level, hence the trie is
-     *            O(Log64(N)</li>
+     *            <li>A value of 1: gives an actual width of two items per
+     *            level, hence the trie is O(Log2(N))</li>
+     *            <li>A value of 6: gives an actual width of 64 items per level,
+     *            hence the trie is O(Log64(N)</li>
      *            </ul>
      */
     public BasicTrie (final int width) {
@@ -400,8 +398,8 @@ public class BasicTrie {
         return false;
     }
 
-    private Predicate singletonNonNullInodeFilter () {
-        return new Predicate () {
+    private Filter singletonNonNullInodeFilter () {
+        return new Filter () {
             public boolean accepts (final ArrayNode an) {
                 return isSingleton (an) || an instanceof INode && ((INode) an).main.get () != null;
             }
@@ -592,7 +590,7 @@ public class BasicTrie {
             }
         }
 
-        public CNode filtered (final Predicate predicate) {
+        public CNode filtered (final Filter predicate) {
             int traversed = 0;
             long filteredBitmap = 0L;
             for (int i = 0; i < 64; i++) {
@@ -668,17 +666,35 @@ public class BasicTrie {
         public final boolean tomb;
     }
 
+    /**
+     * The result of a {@link BasicTrie#flagPos(int, int, long, int)} call.
+     * Contains a single bit flag & a position
+     */
     static class FlagPos {
         FlagPos (final long flag, final int position) {
             this.flag = flag;
             this.position = position;
         }
 
+        /**
+         * A single bit flag that may bit compared to a {@link CNode}'s bitmap.
+         */
         public final long flag;
+        /**
+         * Its position in the array
+         */
         public final int position;
     }
 
-    static interface Predicate {
+    /**
+     * A filter interface. Has a single method for accepting/rejecting object(s)
+     */
+    static interface Filter {
+        /**
+         * @param an
+         *            {@link ArrayNode} instance
+         * @return true if the {@link ArrayNode} is accepted
+         */
         public boolean accepts (ArrayNode an);
     }
 }
