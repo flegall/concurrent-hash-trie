@@ -646,23 +646,55 @@ public class BasicTrie {
         public final long bitmap;
     }
 
+    /**
+     * A Single Node class, holds a key, a value & a tomb flag.
+     */
     static class SNode implements MainNode, ArrayNode {
+        /**
+         * Builds a {@link SNode} instance
+         * 
+         * @param k
+         *            its key object
+         * @param v
+         *            its value
+         * @param tomb
+         *            the tomb flag.
+         */
         SNode (final Object k, final Object v, final boolean tomb) {
             this.key = k;
             this.value = v;
             this.tomb = tomb;
         }
 
+        /**
+         * @return a copied {@link SNode} of this instance, with the tomb flag
+         *         set to true.
+         */
         public SNode tombed () {
             return new SNode (this.key, this.value, true);
         }
 
+        /**
+         * @return a copied {@link SNode} of this instance, with the tomb flag
+         *         set to false.
+         */
         public SNode untombed () {
             return new SNode (this.key, this.value, false);
         }
 
+        /**
+         * The object key
+         */
         public final Object key;
+
+        /**
+         * The object value
+         */
         public final Object value;
+
+        /**
+         * The tomb value
+         */
         public final boolean tomb;
     }
 
@@ -671,6 +703,14 @@ public class BasicTrie {
      * Contains a single bit flag & a position
      */
     static class FlagPos {
+        /**
+         * Builds a {@link FlagPos} instance
+         * 
+         * @param flag
+         *            the bit flag
+         * @param position
+         *            the array location.
+         */
         FlagPos (final long flag, final int position) {
             this.flag = flag;
             this.position = position;
