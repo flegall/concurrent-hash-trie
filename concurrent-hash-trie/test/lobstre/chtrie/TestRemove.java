@@ -12,6 +12,8 @@ public class TestRemove {
         
         for (int i = 0; i < 10000; i++) {
             bt.remove (Integer.valueOf (i));
+            final Object lookup = bt.lookup (Integer.valueOf (i));
+            TestHelper.assertEquals (null, lookup);
         }
 
         bt.toString ();

@@ -286,7 +286,7 @@ public class BasicTrie {
             if (isSingleton (n)) {
                 return ((SNode) n).tombed ();
             } else {
-                return new CNode (f.array, f.bitmap);
+                return f;
             }
         } else {
             return null;
@@ -321,7 +321,7 @@ public class BasicTrie {
                 }
             } else {
                 if (isSingleton (m)) {
-                    final CNode ncn = cn.updated (flagPos.position, (SNode) m);
+                    final CNode ncn = cn.updated (flagPos.position, ((SNode) m).untombed ());
                     if (!parent.main.compareAndSet (cn, ncn)) {
                         contractParent (parent, i, hashCode, level);
                     } else {
@@ -628,6 +628,10 @@ public class BasicTrie {
 
         public SNode tombed () {
             return new SNode (this.key, this.value, true);
+        }
+        
+        public SNode untombed () {
+            return new SNode (this.key, this.value, false);
         }
 
         public final Object key;

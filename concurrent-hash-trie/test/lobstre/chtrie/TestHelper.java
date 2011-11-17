@@ -15,7 +15,9 @@ public class TestHelper {
     }
 
     public static void assertEquals (Object expected, Object found) {
-        if ((expected == null || found == null) && expected != found) {
+        if (expected == found) {
+            // :)
+        } else if ((expected == null || found == null) && expected != found) {
             new Exception ("Error : expected: " + expected + " found: " + found).printStackTrace ();
         } else if (!expected.equals (found)) {
             new Exception ("Error : expected: " + expected + " found: " + found).printStackTrace ();
