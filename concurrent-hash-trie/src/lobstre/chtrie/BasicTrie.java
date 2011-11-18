@@ -528,8 +528,17 @@ public class BasicTrie {
         return flag;
     }
 
-    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
-    private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
+    /**
+     * Atomic Updater for the BasicTrie.root field
+     */
+    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = 
+            AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
+    
+    /**
+     * Atomic Updater for the INode.main field
+     */
+    private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = 
+            AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
 
     /**
      * A Marker interface for what can be in an INode (CNode or SNode)
