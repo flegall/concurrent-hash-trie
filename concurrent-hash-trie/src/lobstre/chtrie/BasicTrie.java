@@ -7,7 +7,7 @@ public class BasicTrie {
      * Root node of the trie
      */
     @SuppressWarnings("unused")
-    private volatile INode root;
+    private volatile INode root = null;
 
     /**
      * Width in bits
@@ -18,7 +18,6 @@ public class BasicTrie {
      * Builds a {@link BasicTrie} instance
      */
     public BasicTrie () {
-        ROOT_UPDATER.set (this, null);
         this.width = 6;
     }
 
@@ -38,7 +37,6 @@ public class BasicTrie {
      *            </ul>
      */
     public BasicTrie (final int width) {
-        ROOT_UPDATER.set (this, null);
         if (width > 6) {
             this.width = 6;
         } else if (width < 1) {
@@ -367,16 +365,20 @@ public class BasicTrie {
     }
 
     private MainNode toCompressed (final CNode cn) {
-        final int num = Long.bitCount (cn.bitmap);
-        if (num == 1 && isTombInode (cn.array [0])) {
-            return INODE_UPDATER.get ((INode) cn.array [0]);
+        {
+            final int num = Long.bitCount (cn.bitmap);
+            final SNode tn;
+            if (num == 1 && null != (tn = getTombNode (cn.array [0]))) {
+                return tn.untombed ();
+            }
         }
 
         final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
         for (int i = 0; i < ncn.array.length; i++) {
             final ArrayNode an = ncn.array [i];
-            if (isTombInode (an)) {
-                ncn.array [i] = (INode) INODE_UPDATER.get ((INode) an);
+            final SNode tn = getTombNode (an);
+            if (null != tn) {
+                ncn.array [i] = tn.untombed ();
             }
         }
 
@@ -387,16 +389,16 @@ public class BasicTrie {
         }
     }
 
-    private boolean isTombInode (final ArrayNode an) {
+    private SNode getTombNode (final ArrayNode an) {
         if (an instanceof INode) {
             final INode in = (INode) an;
             final MainNode mn = INODE_UPDATER.get (in);
             if (mn instanceof SNode) {
                 final SNode sn = (SNode) mn;
-                return sn.tomb;
+                return sn.tomb ? sn : null;
             }
         }
-        return false;
+        return null;
     }
 
     private Filter singletonNonNullInodeFilter () {
@@ -540,6 +542,20 @@ public class BasicTrie {
     private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = 
             AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
 
+    static enum ResultType {
+        FOUND, NOTFOUND, RESTART
+    }
+
+    static class Result {
+        public Result (final ResultType type, final Object result) {
+            this.type = type;
+            this.result = result;
+        }
+
+        public final Object result;
+        public final ResultType type;
+    }
+
     /**
      * A Marker interface for what can be in an INode (CNode or SNode)
      */
@@ -565,25 +581,11 @@ public class BasicTrie {
         public INode (final MainNode n) {
             INODE_UPDATER.set (this, n);
         }
-
+    
         /**
          * The {@link MainNode} instance
          */
         volatile MainNode main;
-    }
-
-    static enum ResultType {
-        FOUND, NOTFOUND, RESTART
-    }
-
-    static class Result {
-        public Result (final ResultType type, final Object result) {
-            this.type = type;
-            this.result = result;
-        }
-
-        public final Object result;
-        public final ResultType type;
     }
 
     /**
