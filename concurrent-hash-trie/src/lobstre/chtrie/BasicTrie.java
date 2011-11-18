@@ -1,12 +1,14 @@
 package lobstre.chtrie;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class BasicTrie {
     /**
      * Root node of the trie
      */
-    private final AtomicReference<INode> root;
+    @SuppressWarnings("unused")
+    private INode root;
 
     /**
      * Width in bits
@@ -17,8 +19,8 @@ public class BasicTrie {
      * Builds a {@link BasicTrie} instance
      */
     public BasicTrie () {
+        ROOT_UPDATER.set (this, null);
         this.width = 6;
-        this.root = new AtomicReference<INode> ();
     }
 
     /**
@@ -37,7 +39,7 @@ public class BasicTrie {
      *            </ul>
      */
     public BasicTrie (final int width) {
-        this.root = new AtomicReference<INode> ();
+        ROOT_UPDATER.set (this, null);
         if (width > 6) {
             this.width = 6;
         } else if (width < 1) {
@@ -56,12 +58,12 @@ public class BasicTrie {
      *            a value Object
      */
     public void insert (final Object k, final Object v) {
-        final INode r = this.root.get ();
+        final INode r = ROOT_UPDATER.get (this);
         if (r == null || isNullInode (r)) {
             // Insertion on an empty trie.
             final CNode cn = new CNode (new SNode (k, v, false), this.width);
             final INode nr = new INode (cn);
-            if (!this.root.compareAndSet (r, nr)) {
+            if (!ROOT_UPDATER.compareAndSet (this, r, nr)) {
                 insert (k, v);
             }
             // Else tries inserting in a populated trie
@@ -78,13 +80,13 @@ public class BasicTrie {
      * @return the value associated to k
      */
     public Object lookup (final Object k) {
-        final INode r = this.root.get ();
+        final INode r = ROOT_UPDATER.get (this);
         if (null == r) {
             // Empty trie
             return null;
         } else if (isNullInode (r)) {
             // Null Inode trie, fix it and retry
-            this.root.compareAndSet (r, null);
+            ROOT_UPDATER.compareAndSet (this,r, null);
             return lookup (k);
         } else {
             // Getting lookup result
@@ -110,13 +112,13 @@ public class BasicTrie {
      * @return true if removed was performed, false otherwises
      */
     public boolean remove (final Object k) {
-        final INode r = this.root.get ();
+        final INode r = ROOT_UPDATER.get (this);
         if (null == r) {
             // Empty trie
             return false;
         } else if (isNullInode (r)) {
             // Null Inode trie, fix it and retry
-            this.root.compareAndSet (r, null);
+            ROOT_UPDATER.compareAndSet (this, r, null);
             return remove (k);
         } else {
             // Getting remove result
@@ -526,6 +528,8 @@ public class BasicTrie {
         final long flag = 1L << subHash;
         return flag;
     }
+    
+    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
 
     /**
      * A Marker interface for what can be in an INode (CNode or SNode)
