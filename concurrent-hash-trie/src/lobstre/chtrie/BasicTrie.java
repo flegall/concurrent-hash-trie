@@ -8,7 +8,7 @@ public class BasicTrie {
      * Root node of the trie
      */
     @SuppressWarnings("unused")
-    private INode root;
+    private volatile INode root;
 
     /**
      * Width in bits
