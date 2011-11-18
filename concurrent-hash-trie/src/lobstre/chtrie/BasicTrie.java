@@ -1,6 +1,5 @@
 package lobstre.chtrie;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class BasicTrie {
@@ -86,7 +85,7 @@ public class BasicTrie {
             return null;
         } else if (isNullInode (r)) {
             // Null Inode trie, fix it and retry
-            ROOT_UPDATER.compareAndSet (this,r, null);
+            ROOT_UPDATER.compareAndSet (this, r, null);
             return lookup (k);
         } else {
             // Getting lookup result
@@ -528,11 +527,9 @@ public class BasicTrie {
         final long flag = 1L << subHash;
         return flag;
     }
-    
-    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = 
-            AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
-    private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = 
-            AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
+
+    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
+    private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
 
     /**
      * A Marker interface for what can be in an INode (CNode or SNode)
@@ -561,7 +558,7 @@ public class BasicTrie {
         }
 
         /**
-         * The {@link AtomicReference} instance
+         * The {@link MainNode} instance
          */
         volatile MainNode main;
     }
