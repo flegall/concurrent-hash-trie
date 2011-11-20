@@ -174,7 +174,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
+        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -224,7 +224,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
+        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -280,7 +280,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if (main instanceof SNode && ((SNode) main).tomb || main == null) {
+        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -355,16 +355,18 @@ public class BasicTrie {
                 }
                 if (null == m) {
                     final CNode ncn = pcn.removed (flagPos);
-                    if (!INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                    if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                        return;
+                    } else {
                         continue;
                     }
                 } else {
                     if (isSingleton (m)) {
                         final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
                         if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
-                            continue;
-                        } else {
                             return;
+                        } else {
+                            continue;
                         }
                     }
                 }
@@ -385,7 +387,7 @@ public class BasicTrie {
             final int num = Long.bitCount (cn.bitmap);
             final SNode tn;
             if (num == 1 && null != (tn = getTombNode (cn.array [0]))) {
-                return tn.tombed ();
+                return tn;
             }
         }
 
