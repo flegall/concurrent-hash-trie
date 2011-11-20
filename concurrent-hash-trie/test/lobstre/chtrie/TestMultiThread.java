@@ -15,7 +15,7 @@ public class TestMultiThread {
                 public void run () {
                     for (int j = 0; j < 500 * 1000; j++) {
                         bt.insert (Integer.valueOf (j), Integer.valueOf (j));
-                        bt.remove (j);
+                        bt.remove (Integer.valueOf (j));
                     }
                 }
             });

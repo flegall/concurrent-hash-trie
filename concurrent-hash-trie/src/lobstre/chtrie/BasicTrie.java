@@ -55,17 +55,23 @@ public class BasicTrie {
      *            a value Object
      */
     public void insert (final Object k, final Object v) {
-        final INode r = ROOT_UPDATER.get (this);
-        if (r == null || isNullInode (r)) {
-            // Insertion on an empty trie.
-            final CNode cn = new CNode (new SNode (k, v, false), this.width);
-            final INode nr = new INode (cn);
-            if (!ROOT_UPDATER.compareAndSet (this, r, nr)) {
-                insert (k, v);
+        while (true) {
+            final INode r = ROOT_UPDATER.get (this);
+            if (r == null || isNullInode (r)) {
+                // Insertion on an empty trie.
+                final CNode cn = new CNode (new SNode (k, v, false), this.width);
+                final INode nr = new INode (cn);
+                if (ROOT_UPDATER.compareAndSet (this, r, nr)) {
+                    break;
+                } else {
+                    continue;
+                }
+                // Else tries inserting in a populated trie
+            } else if (iinsert (r, k, v, 0, null)) {
+                break;
+            } else {
+                continue;
             }
-            // Else tries inserting in a populated trie
-        } else if (!iinsert (r, k, v, 0, null)) {
-            insert (k, v);
         }
     }
 
@@ -77,26 +83,28 @@ public class BasicTrie {
      * @return the value associated to k
      */
     public Object lookup (final Object k) {
-        final INode r = ROOT_UPDATER.get (this);
-        if (null == r) {
-            // Empty trie
-            return null;
-        } else if (isNullInode (r)) {
-            // Null Inode trie, fix it and retry
-            ROOT_UPDATER.compareAndSet (this, r, null);
-            return lookup (k);
-        } else {
-            // Getting lookup result
-            final Result res = ilookup (r, k, 0, null);
-            switch (res.type) {
-            case FOUND:
-                return res.result;
-            case NOTFOUND:
+        while (true) {
+            final INode r = ROOT_UPDATER.get (this);
+            if (null == r) {
+                // Empty trie
                 return null;
-            case RESTART:
-                return lookup (k);
-            default:
-                throw new RuntimeException ("Unexpected case: " + res.type);
+            } else if (isNullInode (r)) {
+                // Null Inode trie, fix it and retry
+                ROOT_UPDATER.compareAndSet (this, r, null);
+                continue;
+            } else {
+                // Getting lookup result
+                final Result res = ilookup (r, k, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return res.result;
+                case NOTFOUND:
+                    return null;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
             }
         }
     }
@@ -109,26 +117,28 @@ public class BasicTrie {
      * @return true if removed was performed, false otherwises
      */
     public boolean remove (final Object k) {
-        final INode r = ROOT_UPDATER.get (this);
-        if (null == r) {
-            // Empty trie
-            return false;
-        } else if (isNullInode (r)) {
-            // Null Inode trie, fix it and retry
-            ROOT_UPDATER.compareAndSet (this, r, null);
-            return remove (k);
-        } else {
-            // Getting remove result
-            final Result res = iremove (r, k, 0, null);
-            switch (res.type) {
-            case FOUND:
-                return true;
-            case NOTFOUND:
+        while (true) {
+            final INode r = ROOT_UPDATER.get (this);
+            if (null == r) {
+                // Empty trie
                 return false;
-            case RESTART:
-                return remove (k);
-            default:
-                throw new RuntimeException ("Unexpected case: " + res.type);
+            } else if (isNullInode (r)) {
+                // Null Inode trie, fix it and retry
+                ROOT_UPDATER.compareAndSet (this, r, null);
+                continue;
+            } else {
+                // Getting remove result
+                final Result res = iremove (r, k, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return true;
+                case NOTFOUND:
+                    return false;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
             }
         }
     }
@@ -170,7 +180,7 @@ public class BasicTrie {
             }
             return new Result (ResultType.RESTART, null);
         }
-        throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
     }
 
     private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
@@ -220,7 +230,7 @@ public class BasicTrie {
             }
             return false;
         }
-        throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
     }
 
     private Result iremove (final INode i, final Object k, final int level, final INode parent) {
@@ -258,7 +268,7 @@ public class BasicTrie {
                 }
             }
             if (null == res) {
-                throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+                throw new RuntimeException ("Found CNODE/SNODE.!tomb");
             }
             if (res.type == ResultType.NOTFOUND || res.type == ResultType.RESTART) {
                 return res;
@@ -276,29 +286,31 @@ public class BasicTrie {
             }
             return new Result (ResultType.RESTART, null);
         }
-        throw new RuntimeException ("Found CNODE/SNODE.tomb!");
+        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
     }
 
     private boolean tombCompress (final INode i) {
-        final MainNode m = INODE_UPDATER.get (i);
-
-        // No need to compress is not a CNode
-        if (!(m instanceof CNode)) {
-            return false;
-        }
-
-        final MainNode mwt = toWeakTombed ((CNode) m);
-
-        if (m == mwt) {
-            return false;
-        } else if (INODE_UPDATER.compareAndSet (i, m, mwt)) {
-            if (mwt == null || mwt instanceof SNode && ((SNode) mwt).tomb) {
-                return true;
-            } else {
+        while (true) {
+            final MainNode m = INODE_UPDATER.get (i);
+            
+            // No need to compress is not a CNode
+            if (!(m instanceof CNode)) {
                 return false;
             }
-        } else {
-            return tombCompress (i);
+            
+            final MainNode mwt = toWeakTombed ((CNode) m);
+            
+            if (m == mwt) {
+                return false;
+            } else if (INODE_UPDATER.compareAndSet (i, m, mwt)) {
+                if (mwt == null || mwt instanceof SNode && ((SNode) mwt).tomb) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                continue;
+            }
         }
     }
 
@@ -326,34 +338,38 @@ public class BasicTrie {
         return n instanceof SNode;
     }
 
-    private void contractParent (final INode parent, final INode i, final int hashCode, final int level) {
-        final MainNode m = INODE_UPDATER.get (i);
-        final MainNode pm = INODE_UPDATER.get (parent);
-        if (pm instanceof CNode) {
-            final CNode pcn = (CNode) pm;
-            final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
-            if (0 == (flagPos.flag & pcn.bitmap)) {
-                return;
-            }
-            final ArrayNode sub = pcn.array [flagPos.position];
-            if (sub != i) {
-                return;
-            }
-            if (null == m) {
-                final CNode ncn = pcn.removed (flagPos);
-                if (!INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
-                    contractParent (parent, i, hashCode, level);
+    private void contractParent (final INode parent, final INode i, 
+            final int hashCode, final int level) {
+        while (true) {
+            final MainNode m = INODE_UPDATER.get (i);
+            final MainNode pm = INODE_UPDATER.get (parent);
+            if (pm instanceof CNode) {
+                final CNode pcn = (CNode) pm;
+                final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
+                if (0 == (flagPos.flag & pcn.bitmap)) {
+                    return;
                 }
-            } else {
-                if (isSingleton (m)) {
-                    final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
-                    if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
-                        contractParent (parent, i, hashCode, level);
-                    } else {
-                        return;
+                final ArrayNode sub = pcn.array [flagPos.position];
+                if (sub != i) {
+                    return;
+                }
+                if (null == m) {
+                    final CNode ncn = pcn.removed (flagPos);
+                    if (!INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                        continue;
+                    }
+                } else {
+                    if (isSingleton (m)) {
+                        final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
+                        if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                            continue;
+                        } else {
+                            return;
+                        }
                     }
                 }
-            }
+            }    
+            return;
         }
     }
 
@@ -369,7 +385,7 @@ public class BasicTrie {
             final int num = Long.bitCount (cn.bitmap);
             final SNode tn;
             if (num == 1 && null != (tn = getTombNode (cn.array [0]))) {
-                return tn.untombed ();
+                return tn.tombed ();
             }
         }
 
@@ -674,11 +690,7 @@ public class BasicTrie {
                 }
             }
 
-            if (filteredBitmap != 0L) {
-                return new CNode (filtered, filteredBitmap);
-            } else {
-                return null;
-            }
+            return new CNode (filtered, filteredBitmap);
         }
 
         /**
