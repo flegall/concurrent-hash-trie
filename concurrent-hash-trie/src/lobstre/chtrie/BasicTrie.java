@@ -330,24 +330,24 @@ public class BasicTrie {
         final MainNode m = INODE_UPDATER.get (i);
         final MainNode pm = INODE_UPDATER.get (parent);
         if (pm instanceof CNode) {
-            final CNode cn = (CNode) pm;
-            final FlagPos flagPos = flagPos (hashCode, level, cn.bitmap, this.width);
-            if (0 == (flagPos.flag & cn.bitmap)) {
+            final CNode pcn = (CNode) pm;
+            final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
+            if (0 == (flagPos.flag & pcn.bitmap)) {
                 return;
             }
-            final ArrayNode sub = cn.array [flagPos.position];
+            final ArrayNode sub = pcn.array [flagPos.position];
             if (sub != i) {
                 return;
             }
             if (null == m) {
-                final CNode ncn = cn.removed (flagPos);
-                if (!INODE_UPDATER.compareAndSet (parent, cn, ncn)) {
+                final CNode ncn = pcn.removed (flagPos);
+                if (!INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
                     contractParent (parent, i, hashCode, level);
                 }
             } else {
                 if (isSingleton (m)) {
-                    final CNode ncn = cn.updated (flagPos.position, ((SNode) m).untombed ());
-                    if (INODE_UPDATER.compareAndSet (parent, cn, ncn)) {
+                    final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
+                    if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
                         contractParent (parent, i, hashCode, level);
                     } else {
                         return;
