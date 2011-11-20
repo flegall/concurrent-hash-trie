@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class TestMultiThreadInsertRemove {
+public class TestMultiThreadAddRemove {
     public static void main (final String[] args) {
         int nThreads = 2;
         final ExecutorService es = Executors.newFixedThreadPool (nThreads);
