@@ -144,7 +144,7 @@ public class BasicTrie {
     }
 
     private Result ilookup (final INode i, final Object k, final int level, final INode parent) {
-        final MainNode main = INODE_UPDATER.get (i);
+        final MainNode main = readINode (i);
 
         // Usual case
         if (main instanceof CNode) {
@@ -184,7 +184,7 @@ public class BasicTrie {
     }
 
     private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
-        final MainNode main = INODE_UPDATER.get (i);
+        final MainNode main = readINode (i);
 
         // Usual case
         if (main instanceof CNode) {
@@ -195,7 +195,7 @@ public class BasicTrie {
             if (0 == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v, false);
                 final CNode ncn = cn.inserted (flagPos, snode);
-                return INODE_UPDATER.compareAndSet (i, main, ncn);
+                return casINode (i, main, ncn);
             }
 
             final ArrayNode an = cn.array [flagPos.position];
@@ -211,14 +211,14 @@ public class BasicTrie {
                 if (sn.key.equals (k)) {
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
-                    return INODE_UPDATER.compareAndSet (i, main, ncn);
+                    return casINode (i, main, ncn);
                 } else {
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
                     final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
                     final CNode ncn = new CNode (narr, cn.bitmap);
-                    return INODE_UPDATER.compareAndSet (i, main, ncn);
+                    return casINode (i, main, ncn);
                 }
             }
         }
@@ -234,7 +234,7 @@ public class BasicTrie {
     }
 
     private Result iremove (final INode i, final Object k, final int level, final INode parent) {
-        final MainNode main = INODE_UPDATER.get (i);
+        final MainNode main = readINode (i);
 
         // Usual case
         if (main instanceof CNode) {
@@ -258,7 +258,7 @@ public class BasicTrie {
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
                     final CNode ncn = cn.removed (flagPos);
-                    if (INODE_UPDATER.compareAndSet (i, cn, ncn)) {
+                    if (casINode (i, cn, ncn)) {
                         res = new Result (ResultType.FOUND, sn.value);
                     } else {
                         res = new Result (ResultType.RESTART, null);
@@ -291,7 +291,7 @@ public class BasicTrie {
 
     private boolean tombCompress (final INode i) {
         while (true) {
-            final MainNode m = INODE_UPDATER.get (i);
+            final MainNode m = readINode (i);
             
             // No need to compress is not a CNode
             if (!(m instanceof CNode)) {
@@ -302,7 +302,7 @@ public class BasicTrie {
             
             if (m == mwt) {
                 return false;
-            } else if (INODE_UPDATER.compareAndSet (i, m, mwt)) {
+            } else if (casINode (i, m, mwt)) {
                 if (mwt == null || mwt instanceof SNode && ((SNode) mwt).tomb) {
                     return true;
                 } else {
@@ -341,8 +341,8 @@ public class BasicTrie {
     private void contractParent (final INode parent, final INode i, 
             final int hashCode, final int level) {
         while (true) {
-            final MainNode m = INODE_UPDATER.get (i);
-            final MainNode pm = INODE_UPDATER.get (parent);
+            final MainNode m = readINode (i);
+            final MainNode pm = readINode (parent);
             if (pm instanceof CNode) {
                 final CNode pcn = (CNode) pm;
                 final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
@@ -355,7 +355,7 @@ public class BasicTrie {
                 }
                 if (null == m) {
                     final CNode ncn = pcn.removed (flagPos);
-                    if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                    if (casINode (parent, pcn, ncn)) {
                         return;
                     } else {
                         continue;
@@ -363,7 +363,7 @@ public class BasicTrie {
                 } else {
                     if (isSingleton (m)) {
                         final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
-                        if (INODE_UPDATER.compareAndSet (parent, pcn, ncn)) {
+                        if (casINode (parent, pcn, ncn)) {
                             return;
                         } else {
                             continue;
@@ -376,9 +376,9 @@ public class BasicTrie {
     }
 
     private void clean (final INode i) {
-        final MainNode m = INODE_UPDATER.get (i);
+        final MainNode m = readINode (i);
         if (m instanceof CNode) {
-            INODE_UPDATER.compareAndSet (i, m, toCompressed ((CNode) m));
+            casINode (i, m, toCompressed ((CNode) m));
         }
     }
 
@@ -410,7 +410,7 @@ public class BasicTrie {
     private SNode getTombNode (final ArrayNode an) {
         if (an instanceof INode) {
             final INode in = (INode) an;
-            final MainNode mn = INODE_UPDATER.get (in);
+            final MainNode mn = readINode (in);
             if (mn instanceof SNode) {
                 final SNode sn = (SNode) mn;
                 return sn.tomb ? sn : null;
@@ -422,7 +422,7 @@ public class BasicTrie {
     private Filter singletonNonNullInodeFilter () {
         return new Filter () {
             public boolean accepts (final ArrayNode an) {
-                return isSingleton (an) || an instanceof INode && INODE_UPDATER.get ((INode) an) != null;
+                return isSingleton (an) || an instanceof INode && readINode ((INode) an) != null;
             }
         };
     }
@@ -507,7 +507,7 @@ public class BasicTrie {
      * @return true
      */
     static boolean isNullInode (final INode i) {
-        return INODE_UPDATER.get (i) == null;
+        return readINode (i) == null;
     }
 
     /**
@@ -546,6 +546,26 @@ public class BasicTrie {
         final int subHash = hc >> level & (1 << bitsRemaining) - 1;
         final long flag = 1L << subHash;
         return flag;
+    }
+
+    boolean casINode (final INode i, final MainNode m, final MainNode nm) {
+        if (i == ROOT_UPDATER.get (this)) {
+            if (nm instanceof SNode) {
+                SNode sn = (SNode) nm;
+                if (sn.tomb) {
+                    new RuntimeException ().printStackTrace ();
+                }
+            }
+        }
+        return INODE_UPDATER.compareAndSet (i, m, nm);
+    }
+
+    static MainNode readINode (INode i) {
+        return INODE_UPDATER.get (i);
+    }
+    
+    static void setInode (final INode i, final MainNode n) {
+        INODE_UPDATER.set (i, n);
     }
 
     /**
@@ -597,9 +617,9 @@ public class BasicTrie {
          *            a {@link MainNode}
          */
         public INode (final MainNode n) {
-            INODE_UPDATER.set (this, n);
+            setInode (this, n);
         }
-    
+
         /**
          * The {@link MainNode} instance
          */
