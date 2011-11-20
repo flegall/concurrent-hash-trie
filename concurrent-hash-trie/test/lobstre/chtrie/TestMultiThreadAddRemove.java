@@ -6,9 +6,15 @@ import java.util.concurrent.TimeUnit;
 
 public class TestMultiThreadAddRemove {
     public static void main (final String[] args) {
+        final BasicTrie bt = new BasicTrie ();
+
+        for (int j = 500 * 1000; j < 1000 * 1000; j++) {
+            bt.insert (Integer.valueOf (j), Integer.valueOf (j));
+            bt.remove (Integer.valueOf (j));
+        }
+        
         int nThreads = 2;
         final ExecutorService es = Executors.newFixedThreadPool (nThreads);
-        final BasicTrie bt = new BasicTrie ();
         for (int i = 0; i < nThreads; i++) {
             es.execute (new Runnable () {
                 @Override
