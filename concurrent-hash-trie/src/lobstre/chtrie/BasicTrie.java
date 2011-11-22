@@ -383,14 +383,6 @@ public class BasicTrie {
     }
 
     private MainNode toCompressed (final CNode cn) {
-//        {
-//            final int num = Long.bitCount (cn.bitmap);
-//            final SNode tn;
-//            if (num == 1 && null != (tn = getTombNode (cn.array [0]))) {
-//                return tn;
-//            }
-//        }
-
         final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
         for (int i = 0; i < ncn.array.length; i++) {
             final ArrayNode an = ncn.array [i];
