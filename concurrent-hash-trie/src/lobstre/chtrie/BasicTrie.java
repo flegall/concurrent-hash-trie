@@ -541,14 +541,6 @@ public class BasicTrie {
     }
 
     boolean casINode (final INode i, final MainNode m, final MainNode nm) {
-        if (i == ROOT_UPDATER.get (this)) {
-            if (nm instanceof SNode) {
-                SNode sn = (SNode) nm;
-                if (sn.tomb) {
-                    new RuntimeException ().printStackTrace ();
-                }
-            }
-        }
         return INODE_UPDATER.compareAndSet (i, m, nm);
     }
 
