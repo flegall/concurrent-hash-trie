@@ -59,7 +59,7 @@ public class BasicTrie {
             final INode r = getRoot ();
             if (r == null || isNullInode (r)) {
                 // Insertion on an empty trie.
-                final CNode cn = new CNode (new SNode (k, v, false), this.width);
+                final CNode cn = new CNode (new SNode (k, v), this.width);
                 final INode nr = new INode (cn);
                 if (casRoot (r, nr)) {
                     break;
@@ -162,7 +162,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return ilookup (sin, k, level + this.width, i);
             }
-            if (isSingleton (an) && !((SNode) an).tomb) {
+            if (isSNode (an)) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -174,7 +174,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
+        if ((main instanceof TNode) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -193,7 +193,7 @@ public class BasicTrie {
 
             // Asked for a hash not in trie, let's insert it
             if (0 == (flagPos.flag & cn.bitmap)) {
-                final SNode snode = new SNode (k, v, false);
+                final SNode snode = new SNode (k, v);
                 final CNode ncn = cn.inserted (flagPos, snode);
                 return i.casMain (main, ncn);
             }
@@ -204,9 +204,9 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return iinsert (sin, k, v, level + this.width, i);
             }
-            if (isSingleton (an) && !((SNode) an).tomb) {
+            if (isSNode (an)) {
                 final SNode sn = (SNode) an;
-                final SNode nsn = new SNode (k, v, false);
+                final SNode nsn = new SNode (k, v);
                 // Found the hash locally, let's see if it matches
                 if (sn.key.equals (k)) {
                     // Updates the key with the new value
@@ -224,7 +224,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
+        if ((main instanceof TNode) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -253,7 +253,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 res = iremove (sin, k, level + this.width, i);
             }
-            if (isSingleton (an) && !((SNode) an).tomb) {
+            if (isSNode (an)) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -280,7 +280,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if ((main instanceof SNode && ((SNode) main).tomb) || main == null) {
+        if ((main instanceof TNode) || main == null) {
             if (parent != null) {
                 clean (parent);
             }
@@ -303,7 +303,7 @@ public class BasicTrie {
             if (m == mwt) {
                 return false;
             } else if (i.casMain (m, mwt)) {
-                if (mwt == null || mwt instanceof SNode && ((SNode) mwt).tomb) {
+                if (mwt == null || mwt instanceof TNode) {
                     return true;
                 } else {
                     return false;
@@ -320,7 +320,7 @@ public class BasicTrie {
             return cn;
         } else if (f.array.length == 1) {
             final BranchNode n = f.array [0];
-            if (isSingleton (n)) {
+            if (isSNode (n)) {
                 return ((SNode) n).tombed ();
             } else {
                 return f;
@@ -330,11 +330,7 @@ public class BasicTrie {
         }
     }
 
-    private boolean isSingleton (final BranchNode n) {
-        return n instanceof SNode;
-    }
-
-    private boolean isSingleton (final MainNode n) {
+    private boolean isSNode (final BranchNode n) {
         return n instanceof SNode;
     }
 
@@ -361,8 +357,9 @@ public class BasicTrie {
                         continue;
                     }
                 } else {
-                    if (isSingleton (m)) {
-                        final CNode ncn = pcn.updated (flagPos.position, ((SNode) m).untombed ());
+                    if (m instanceof TNode) {
+                        final CNode ncn = pcn.updated (
+                                flagPos.position, ((TNode) m).untombed ());
                         if (parent.casMain (pcn, ncn)) {
                             return;
                         } else {
@@ -386,7 +383,7 @@ public class BasicTrie {
         final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
         for (int i = 0; i < ncn.array.length; i++) {
             final BranchNode an = ncn.array [i];
-            final SNode tn = getTombNode (an);
+            final TNode tn = getTombNode (an);
             if (null != tn) {
                 ncn.array [i] = tn.untombed ();
             }
@@ -399,13 +396,13 @@ public class BasicTrie {
         }
     }
 
-    private SNode getTombNode (final BranchNode an) {
+    private TNode getTombNode (final BranchNode an) {
         if (an instanceof INode) {
             final INode in = (INode) an;
             final MainNode mn = in.getMain ();
-            if (mn instanceof SNode) {
-                final SNode sn = (SNode) mn;
-                return sn.tomb ? sn : null;
+            if (mn instanceof TNode) {
+                final TNode tn = (TNode) mn;
+                return tn;
             }
         }
         return null;
@@ -422,7 +419,7 @@ public class BasicTrie {
     private Filter singletonNonNullInodeFilter () {
         return new Filter () {
             public boolean accepts (final BranchNode an) {
-                return isSingleton (an) || an instanceof INode && ((INode) an).getMain () != null;
+                return isSNode (an) || an instanceof INode && ((INode) an).getMain () != null;
             }
         };
     }
@@ -794,7 +791,7 @@ public class BasicTrie {
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SNode extends BaseKVNode implements MainNode, BranchNode {
+    static class SNode extends BaseKVNode implements BranchNode {
         /**
          * Builds a {@link SNode} instance
          * 
@@ -802,40 +799,23 @@ public class BasicTrie {
          *            its key object
          * @param v
          *            its value
-         * @param tomb
-         *            the tomb flag.
          */
-        SNode (final Object k, final Object v, final boolean tomb) {
+        SNode (final Object k, final Object v) {
             super (k ,v);
-            this.tomb = tomb;
         }
 
         /**
-         * @return a copied {@link SNode} of this instance, with the tomb flag
-         *         set to true.
+         * @return a copied {@link TNode} for this instance.
          */
-        public SNode tombed () {
-            return new SNode (this.key, this.value, true);
+        public TNode tombed () {
+            return new TNode (this.key, this.value);
         }
-
-        /**
-         * @return a copied {@link SNode} of this instance, with the tomb flag
-         *         set to false.
-         */
-        public SNode untombed () {
-            return new SNode (this.key, this.value, false);
-        }
-
-        /**
-         * The tomb value
-         */
-        public final boolean tomb;
     }
     
     /**
      * A Tombed node instance
      */
-    static class TNode extends BaseKVNode {
+    static class TNode extends BaseKVNode implements MainNode {
         /**
          * Builds a {@link TNode} instance
          * 
@@ -846,6 +826,13 @@ public class BasicTrie {
          */
         TNode (Object k, Object v) {
             super (k, v);
+        }
+        
+        /**
+         * @return a copied {@link SNode} of this instance
+         */
+        public SNode untombed () {
+            return new SNode (this.key, this.value);
         }
     }
 
