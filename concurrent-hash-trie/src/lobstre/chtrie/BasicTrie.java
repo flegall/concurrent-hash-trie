@@ -57,7 +57,7 @@ public class BasicTrie {
     public void insert (final Object k, final Object v) {
         while (true) {
             final INode r = getRoot ();
-            if (r == null || isNullInode (r)) {
+            if (r == null || r.getMain () == null) {
                 // Insertion on an empty trie.
                 final CNode cn = new CNode (new SNode (k, v), this.width);
                 final INode nr = new INode (cn);
@@ -88,7 +88,7 @@ public class BasicTrie {
             if (null == r) {
                 // Empty trie
                 return null;
-            } else if (isNullInode (r)) {
+            } else if (r.getMain () == null) {
                 // Null Inode root, fix it and retry
                 casRoot (r, null);
                 continue;
@@ -122,7 +122,7 @@ public class BasicTrie {
             if (null == r) {
                 // Empty trie
                 return false;
-            } else if (isNullInode (r)) {
+            } else if (r.getMain () == null) {
                 // Null Inode trie, fix it and retry
                 casRoot (r, null);
                 continue;
@@ -162,7 +162,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return ilookup (sin, k, level + this.width, i);
             }
-            if (isSNode (an)) {
+            if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -204,7 +204,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 return iinsert (sin, k, v, level + this.width, i);
             }
-            if (isSNode (an)) {
+            if (an instanceof SNode) {
                 final SNode sn = (SNode) an;
                 final SNode nsn = new SNode (k, v);
                 // Found the hash locally, let's see if it matches
@@ -253,7 +253,7 @@ public class BasicTrie {
                 final INode sin = (INode) an;
                 res = iremove (sin, k, level + this.width, i);
             }
-            if (isSNode (an)) {
+            if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
@@ -320,7 +320,7 @@ public class BasicTrie {
             return cn;
         } else if (f.array.length == 1) {
             final BranchNode n = f.array [0];
-            if (isSNode (n)) {
+            if (n instanceof SNode) {
                 return ((SNode) n).tombed ();
             } else {
                 return f;
@@ -328,10 +328,6 @@ public class BasicTrie {
         } else {
             return null;
         }
-    }
-
-    private boolean isSNode (final BranchNode n) {
-        return n instanceof SNode;
     }
 
     private void contractParent (final INode parent, final INode i, 
@@ -419,7 +415,7 @@ public class BasicTrie {
     private Filter singletonNonNullInodeFilter () {
         return new Filter () {
             public boolean accepts (final BranchNode an) {
-                return isSNode (an) || an instanceof INode && ((INode) an).getMain () != null;
+                return an instanceof SNode || an instanceof INode && ((INode) an).getMain () != null;
             }
         };
     }
@@ -494,17 +490,6 @@ public class BasicTrie {
             }
         }
         return narr;
-    }
-
-    /**
-     * Returns <code>true</code> if the {@link INode} contains a Null reference
-     * 
-     * @param i
-     *            an {@link INode} instance
-     * @return true
-     */
-    static boolean isNullInode (final INode i) {
-        return i.getMain () == null;
     }
 
     /**
