@@ -174,10 +174,8 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if ((main instanceof TNode) || main == null) {
-            if (parent != null) {
-                clean (parent);
-            }
+        if (main instanceof TNode) {
+            clean (parent, level - width);
             return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Found CNODE/SNODE.!tomb");
@@ -292,14 +290,14 @@ public class BasicTrie {
     private boolean tombCompress (final INode i) {
         while (true) {
             final MainNode m = i.getMain ();
-            
+
             // No need to compress is not a CNode
             if (!(m instanceof CNode)) {
                 return false;
             }
-            
+
             final MainNode mwt = toWeakTombed ((CNode) m);
-            
+
             if (m == mwt) {
                 return false;
             } else if (i.casMain (m, mwt)) {
@@ -330,8 +328,7 @@ public class BasicTrie {
         }
     }
 
-    private void contractParent (final INode parent, final INode i, 
-            final int hashCode, final int level) {
+    private void contractParent (final INode parent, final INode i, final int hashCode, final int level) {
         while (true) {
             final MainNode m = i.getMain ();
             final MainNode pm = parent.getMain ();
@@ -354,8 +351,7 @@ public class BasicTrie {
                     }
                 } else {
                     if (m instanceof TNode) {
-                        final CNode ncn = pcn.updated (
-                                flagPos.position, ((TNode) m).untombed ());
+                        final CNode ncn = pcn.updated (flagPos.position, ((TNode) m).untombed ());
                         if (parent.casMain (pcn, ncn)) {
                             return;
                         } else {
@@ -363,7 +359,7 @@ public class BasicTrie {
                         }
                     }
                 }
-            }    
+            }
             return;
         }
     }
@@ -372,6 +368,13 @@ public class BasicTrie {
         final MainNode m = i.getMain ();
         if (m instanceof CNode) {
             i.casMain (m, toCompressed ((CNode) m));
+        }
+    }
+
+    private void clean (final INode i, final int level) {
+        final MainNode m = i.getMain ();
+        if (m instanceof CNode) {
+            i.casMain (m, toCompressed ((CNode) m, level));
         }
     }
 
@@ -390,6 +393,31 @@ public class BasicTrie {
         } else {
             return null;
         }
+    }
+
+    private MainNode toCompressed (final CNode cn, final int level) {
+        final CNode ncn = cn.copied ();
+        
+        // Resurrect tombed nodes.
+        for (int i = 0; i < ncn.array.length; i++) {
+            final BranchNode an = ncn.array [i];
+            final TNode tn = getTombNode (an);
+            if (null != tn) {
+                ncn.array [i] = tn.untombed ();
+            }
+        }
+        
+        return toContracted (ncn, level);
+    }
+
+    private MainNode toContracted (final CNode cn, final int level) {
+        if (level > 0 && 1 == cn.array.length) {
+            final BranchNode bn = cn.array[0];
+            if (bn instanceof SNode) {
+                return ((SNode) bn).tombed ();
+            }
+        }
+        return cn;
     }
 
     private TNode getTombNode (final BranchNode an) {
@@ -533,9 +561,8 @@ public class BasicTrie {
     /**
      * Atomic Updater for the BasicTrie.root field
      */
-    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = 
-            AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
-    
+    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
+
     static enum ResultType {
         FOUND, NOTFOUND, RESTART
     }
@@ -587,8 +614,7 @@ public class BasicTrie {
         /**
          * Atomic Updater for the INode.main field
          */
-        private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = 
-                AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
+        private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
         /**
          * The {@link MainNode} instance
          */
@@ -643,6 +669,17 @@ public class BasicTrie {
             } else {
                 return new CNode (narr, this.bitmap - flagPos.flag);
             }
+        }
+
+        /**
+         * Builds a copy of the current node.
+         * 
+         * @return a {@link CNode} copy
+         */
+        public CNode copied () {
+            final BranchNode[] narr = new BranchNode[array.length];
+            System.arraycopy (this.array, 0, narr, 0, array.length);
+            return new CNode (narr, bitmap);
         }
 
         /**
@@ -746,7 +783,7 @@ public class BasicTrie {
          */
         public final long bitmap;
     }
-    
+
     static abstract class BaseKVNode {
         /**
          * Builds a {@link SNode} instance
@@ -762,6 +799,7 @@ public class BasicTrie {
             this.key = k;
             this.value = v;
         }
+
         /**
          * The object key
          */
@@ -786,7 +824,7 @@ public class BasicTrie {
          *            its value
          */
         SNode (final Object k, final Object v) {
-            super (k ,v);
+            super (k, v);
         }
 
         /**
@@ -796,7 +834,7 @@ public class BasicTrie {
             return new TNode (this.key, this.value);
         }
     }
-    
+
     /**
      * A Tombed node instance
      */
@@ -812,7 +850,7 @@ public class BasicTrie {
         TNode (Object k, Object v) {
             super (k, v);
         }
-        
+
         /**
          * @return a copied {@link SNode} of this instance
          */
@@ -848,7 +886,7 @@ public class BasicTrie {
          */
         public final int position;
     }
-    
+
     /**
      * A filter interface. Has a single method for accepting/rejecting object(s)
      */
