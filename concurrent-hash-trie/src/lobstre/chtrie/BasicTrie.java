@@ -363,6 +363,36 @@ public class BasicTrie {
             return;
         }
     }
+    
+    @SuppressWarnings("unused")
+    private void cleanParent (final INode parent, final INode i, final int hashCode, final int level) {
+        while (true) {
+            final MainNode m = i.getMain ();
+            final MainNode pm = parent.getMain ();
+            if (pm instanceof CNode) {
+                final CNode pcn = (CNode) pm;
+                final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
+                if (0 == (flagPos.flag & pcn.bitmap)) {
+                    return;
+                }
+                final BranchNode sub = pcn.array [flagPos.position];
+                if (sub != i) {
+                    return;
+                }
+                if (m instanceof TNode) {
+                    final CNode ncn = pcn.updated (flagPos.position, 
+                            ((TNode) m).untombed ());
+                    if (parent.casMain (pcn, ncn)) {
+                        return;
+                    } else {
+                        continue;
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+    }
 
     private void clean (final INode i) {
         final MainNode m = i.getMain ();
