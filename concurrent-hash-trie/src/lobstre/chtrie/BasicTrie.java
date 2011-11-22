@@ -765,7 +765,7 @@ public class BasicTrie {
         public final long bitmap;
     }
     
-    static abstract class BaseSNode {
+    static abstract class BaseKVNode {
         /**
          * Builds a {@link SNode} instance
          * 
@@ -776,7 +776,7 @@ public class BasicTrie {
          * @param tomb
          *            the tomb flag.
          */
-        BaseSNode (final Object k, final Object v) {
+        BaseKVNode (final Object k, final Object v) {
             this.key = k;
             this.value = v;
         }
@@ -794,7 +794,7 @@ public class BasicTrie {
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SNode extends BaseSNode implements MainNode, BranchNode {
+    static class SNode extends BaseKVNode implements MainNode, BranchNode {
         /**
          * Builds a {@link SNode} instance
          * 
@@ -833,6 +833,23 @@ public class BasicTrie {
     }
     
     /**
+     * A Tombed node instance
+     */
+    static class TNode extends BaseKVNode {
+        /**
+         * Builds a {@link TNode} instance
+         * 
+         * @param k
+         *            its key object
+         * @param v
+         *            its value
+         */
+        TNode (Object k, Object v) {
+            super (k, v);
+        }
+    }
+
+    /**
      * The result of a {@link BasicTrie#flagPos(int, int, long, int)} call.
      * Contains a single bit flag & a position
      */
@@ -859,7 +876,7 @@ public class BasicTrie {
          */
         public final int position;
     }
-
+    
     /**
      * A filter interface. Has a single method for accepting/rejecting object(s)
      */
