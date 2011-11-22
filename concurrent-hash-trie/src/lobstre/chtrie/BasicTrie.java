@@ -89,7 +89,7 @@ public class BasicTrie {
                 // Empty trie
                 return null;
             } else if (isNullInode (r)) {
-                // Null Inode trie, fix it and retry
+                // Null Inode root, fix it and retry
                 casRoot (r, null);
                 continue;
             } else {
@@ -156,7 +156,7 @@ public class BasicTrie {
                 return new Result (ResultType.NOTFOUND, null);
             }
 
-            final ArrayNode an = cn.array [flagPos.position];
+            final BranchNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
@@ -198,7 +198,7 @@ public class BasicTrie {
                 return i.casMain (main, ncn);
             }
 
-            final ArrayNode an = cn.array [flagPos.position];
+            final BranchNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
@@ -216,7 +216,7 @@ public class BasicTrie {
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
-                    final ArrayNode[] narr = updated (cn.array, flagPos.position, nin);
+                    final BranchNode[] narr = updated (cn.array, flagPos.position, nin);
                     final CNode ncn = new CNode (narr, cn.bitmap);
                     return i.casMain (main, ncn);
                 }
@@ -247,7 +247,7 @@ public class BasicTrie {
             }
 
             Result res = null;
-            final ArrayNode an = cn.array [flagPos.position];
+            final BranchNode an = cn.array [flagPos.position];
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
@@ -319,7 +319,7 @@ public class BasicTrie {
         if (f.array.length > 1) {
             return cn;
         } else if (f.array.length == 1) {
-            final ArrayNode n = f.array [0];
+            final BranchNode n = f.array [0];
             if (isSingleton (n)) {
                 return ((SNode) n).tombed ();
             } else {
@@ -330,7 +330,7 @@ public class BasicTrie {
         }
     }
 
-    private boolean isSingleton (final ArrayNode n) {
+    private boolean isSingleton (final BranchNode n) {
         return n instanceof SNode;
     }
 
@@ -349,7 +349,7 @@ public class BasicTrie {
                 if (0 == (flagPos.flag & pcn.bitmap)) {
                     return;
                 }
-                final ArrayNode sub = pcn.array [flagPos.position];
+                final BranchNode sub = pcn.array [flagPos.position];
                 if (sub != i) {
                     return;
                 }
@@ -385,7 +385,7 @@ public class BasicTrie {
     private MainNode toCompressed (final CNode cn) {
         final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
         for (int i = 0; i < ncn.array.length; i++) {
-            final ArrayNode an = ncn.array [i];
+            final BranchNode an = ncn.array [i];
             final SNode tn = getTombNode (an);
             if (null != tn) {
                 ncn.array [i] = tn.untombed ();
@@ -399,7 +399,7 @@ public class BasicTrie {
         }
     }
 
-    private SNode getTombNode (final ArrayNode an) {
+    private SNode getTombNode (final BranchNode an) {
         if (an instanceof INode) {
             final INode in = (INode) an;
             final MainNode mn = in.getMain ();
@@ -421,26 +421,26 @@ public class BasicTrie {
 
     private Filter singletonNonNullInodeFilter () {
         return new Filter () {
-            public boolean accepts (final ArrayNode an) {
+            public boolean accepts (final BranchNode an) {
                 return isSingleton (an) || an instanceof INode && ((INode) an).getMain () != null;
             }
         };
     }
 
     /**
-     * Returns a copy an {@link ArrayNode} array with an updated
-     * {@link ArrayNode} value at a certain position.
+     * Returns a copy an {@link BranchNode} array with an updated
+     * {@link BranchNode} value at a certain position.
      * 
      * @param array
-     *            the source {@link ArrayNode} array
+     *            the source {@link BranchNode} array
      * @param position
      *            the position
      * @param n
-     *            the updated {@link ArrayNode} value
-     * @return an updated copy of the source {@link ArrayNode} array
+     *            the updated {@link BranchNode} value
+     * @return an updated copy of the source {@link BranchNode} array
      */
-    static ArrayNode[] updated (final ArrayNode[] array, final int position, final ArrayNode n) {
-        final ArrayNode[] narr = new ArrayNode[array.length];
+    static BranchNode[] updated (final BranchNode[] array, final int position, final BranchNode n) {
+        final BranchNode[] narr = new BranchNode[array.length];
         for (int i = 0; i < array.length; i++) {
             if (i == position) {
                 narr [i] = n;
@@ -452,19 +452,19 @@ public class BasicTrie {
     }
 
     /**
-     * Returns a copy an {@link ArrayNode} array with an inserted
-     * {@link ArrayNode} value at a certain position.
+     * Returns a copy an {@link BranchNode} array with an inserted
+     * {@link BranchNode} value at a certain position.
      * 
      * @param array
-     *            the source {@link ArrayNode} array
+     *            the source {@link BranchNode} array
      * @param position
      *            the position
      * @param n
-     *            the inserted {@link ArrayNode} value
-     * @return an updated copy of the source {@link ArrayNode} array
+     *            the inserted {@link BranchNode} value
+     * @return an updated copy of the source {@link BranchNode} array
      */
-    static ArrayNode[] inserted (final ArrayNode[] array, final int position, final ArrayNode n) {
-        final ArrayNode[] narr = new ArrayNode[array.length + 1];
+    static BranchNode[] inserted (final BranchNode[] array, final int position, final BranchNode n) {
+        final BranchNode[] narr = new BranchNode[array.length + 1];
         for (int i = 0; i < array.length + 1; i++) {
             if (i < position) {
                 narr [i] = array [i];
@@ -478,17 +478,17 @@ public class BasicTrie {
     }
 
     /**
-     * Returns a copy an {@link ArrayNode} array with a removed
-     * {@link ArrayNode} value at a certain position.
+     * Returns a copy an {@link BranchNode} array with a removed
+     * {@link BranchNode} value at a certain position.
      * 
      * @param array
-     *            the source {@link ArrayNode} array
+     *            the source {@link BranchNode} array
      * @param position
      *            the position
-     * @return an updated copy of the source {@link ArrayNode} array
+     * @return an updated copy of the source {@link BranchNode} array
      */
-    static ArrayNode[] removed (final ArrayNode[] array, final int position) {
-        final ArrayNode[] narr = new ArrayNode[array.length - 1];
+    static BranchNode[] removed (final BranchNode[] array, final int position) {
+        final BranchNode[] narr = new BranchNode[array.length - 1];
         for (int i = 0; i < array.length; i++) {
             if (i < position) {
                 narr [i] = array [i];
@@ -577,13 +577,13 @@ public class BasicTrie {
     /**
      * A Marker interface for what can be in a CNode array. (INode or SNode)
      */
-    static interface ArrayNode {
+    static interface BranchNode {
     }
 
     /**
      * A CAS-able Node which may reference either a CNode or and SNode
      */
-    static class INode implements ArrayNode {
+    static class INode implements BranchNode {
         /**
          * Builds an {@link INode} instance
          * 
@@ -627,7 +627,7 @@ public class BasicTrie {
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode inserted (final FlagPos flagPos, final SNode snode) {
-            final ArrayNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
+            final BranchNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
             return new CNode (narr, flagPos.flag | this.bitmap);
         }
 
@@ -640,7 +640,7 @@ public class BasicTrie {
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode updated (final int position, final SNode nsn) {
-            final ArrayNode[] narr = BasicTrie.updated (this.array, position, nsn);
+            final BranchNode[] narr = BasicTrie.updated (this.array, position, nsn);
             return new CNode (narr, this.bitmap);
         }
 
@@ -655,7 +655,7 @@ public class BasicTrie {
          *         the resulting CNode would be empty.
          */
         public CNode removed (final FlagPos flagPos) {
-            final ArrayNode[] narr = BasicTrie.removed (this.array, flagPos.position);
+            final BranchNode[] narr = BasicTrie.removed (this.array, flagPos.position);
             if (narr.length == 0) {
                 return null;
             } else {
@@ -679,14 +679,14 @@ public class BasicTrie {
             for (int i = 0; i < 64; i++) {
                 final long flag = 1L << i;
                 if (0L != (this.bitmap & flag)) {
-                    final ArrayNode an = this.array [traversed++];
+                    final BranchNode an = this.array [traversed++];
                     if (filter.accepts (an)) {
                         filteredBitmap += flag;
                     }
                 }
             }
 
-            final ArrayNode[] filtered = new ArrayNode[Long.bitCount (filteredBitmap)];
+            final BranchNode[] filtered = new BranchNode[Long.bitCount (filteredBitmap)];
 
             traversed = 0;
             int copied = 0;
@@ -713,7 +713,7 @@ public class BasicTrie {
          */
         CNode (final SNode sNode, final int width) {
             final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
-            this.array = new ArrayNode[] { sNode };
+            this.array = new BranchNode[] { sNode };
             this.bitmap = flag;
         }
 
@@ -733,42 +733,68 @@ public class BasicTrie {
             final long flag1 = BasicTrie.flag (sn1.key.hashCode (), level, width);
             final long flag2 = BasicTrie.flag (sn2.key.hashCode (), level, width);
             if (flag1 < flag2) {
-                this.array = new ArrayNode[] { sn1, sn2 };
+                this.array = new BranchNode[] { sn1, sn2 };
             } else {
-                this.array = new ArrayNode[] { sn2, sn1 };
+                this.array = new BranchNode[] { sn2, sn1 };
             }
             this.bitmap = flag1 | flag2;
         }
 
         /**
-         * Builds a {@link CNode} from an array of {@link ArrayNode} and its
+         * Builds a {@link CNode} from an array of {@link BranchNode} and its
          * computed bitmap.
          * 
          * @param array
-         *            the {@link ArrayNode} array
+         *            the {@link BranchNode} array
          * @param bitmap
          *            the bitmap
          */
-        CNode (final ArrayNode[] array, final long bitmap) {
+        CNode (final BranchNode[] array, final long bitmap) {
             this.array = array;
             this.bitmap = bitmap;
         }
 
         /**
-         * The internal {@link ArrayNode} array.
+         * The internal {@link BranchNode} array.
          */
-        public final ArrayNode[] array;
+        public final BranchNode[] array;
 
         /**
          * The bitmap of the currently allocated objects.
          */
         public final long bitmap;
     }
+    
+    static abstract class BaseSNode {
+        /**
+         * Builds a {@link SNode} instance
+         * 
+         * @param k
+         *            its key object
+         * @param v
+         *            its value
+         * @param tomb
+         *            the tomb flag.
+         */
+        BaseSNode (final Object k, final Object v) {
+            this.key = k;
+            this.value = v;
+        }
+        /**
+         * The object key
+         */
+        public final Object key;
+
+        /**
+         * The object value
+         */
+        public final Object value;
+    }
 
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SNode implements MainNode, ArrayNode {
+    static class SNode extends BaseSNode implements MainNode, BranchNode {
         /**
          * Builds a {@link SNode} instance
          * 
@@ -780,8 +806,7 @@ public class BasicTrie {
          *            the tomb flag.
          */
         SNode (final Object k, final Object v, final boolean tomb) {
-            this.key = k;
-            this.value = v;
+            super (k ,v);
             this.tomb = tomb;
         }
 
@@ -802,21 +827,11 @@ public class BasicTrie {
         }
 
         /**
-         * The object key
-         */
-        public final Object key;
-
-        /**
-         * The object value
-         */
-        public final Object value;
-
-        /**
          * The tomb value
          */
         public final boolean tomb;
     }
-
+    
     /**
      * The result of a {@link BasicTrie#flagPos(int, int, long, int)} call.
      * Contains a single bit flag & a position
@@ -851,9 +866,9 @@ public class BasicTrie {
     static interface Filter {
         /**
          * @param an
-         *            {@link ArrayNode} instance
-         * @return true if the {@link ArrayNode} is accepted
+         *            {@link BranchNode} instance
+         * @return true if the {@link BranchNode} is accepted
          */
-        public boolean accepts (ArrayNode an);
+        public boolean accepts (BranchNode an);
     }
 }
