@@ -56,12 +56,12 @@ public class BasicTrie {
      */
     public void insert (final Object k, final Object v) {
         while (true) {
-            final INode r = ROOT_UPDATER.get (this);
+            final INode r = getRootInode ();
             if (r == null || isNullInode (r)) {
                 // Insertion on an empty trie.
                 final CNode cn = new CNode (new SNode (k, v, false), this.width);
                 final INode nr = new INode (cn);
-                if (ROOT_UPDATER.compareAndSet (this, r, nr)) {
+                if (casRootInode (r, nr)) {
                     break;
                 } else {
                     continue;
@@ -75,6 +75,14 @@ public class BasicTrie {
         }
     }
 
+    private boolean casRootInode (final INode r, final INode nr) {
+        return ROOT_UPDATER.compareAndSet (this, r, nr);
+    }
+
+    private INode getRootInode () {
+        return ROOT_UPDATER.get (this);
+    }
+
     /**
      * Looks up the value associated to a key
      * 
@@ -84,13 +92,13 @@ public class BasicTrie {
      */
     public Object lookup (final Object k) {
         while (true) {
-            final INode r = ROOT_UPDATER.get (this);
+            final INode r = getRootInode ();
             if (null == r) {
                 // Empty trie
                 return null;
             } else if (isNullInode (r)) {
                 // Null Inode trie, fix it and retry
-                ROOT_UPDATER.compareAndSet (this, r, null);
+                casRootInode (r, null);
                 continue;
             } else {
                 // Getting lookup result
@@ -118,13 +126,13 @@ public class BasicTrie {
      */
     public boolean remove (final Object k) {
         while (true) {
-            final INode r = ROOT_UPDATER.get (this);
+            final INode r = getRootInode ();
             if (null == r) {
                 // Empty trie
                 return false;
             } else if (isNullInode (r)) {
                 // Null Inode trie, fix it and retry
-                ROOT_UPDATER.compareAndSet (this, r, null);
+                casRootInode (r, null);
                 continue;
             } else {
                 // Getting remove result
