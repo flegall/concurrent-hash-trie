@@ -175,7 +175,7 @@ public class BasicTrie {
 
         // Cleaning up trie
         if (main instanceof TNode) {
-            clean (parent, level - width);
+            clean (parent, level - this.width);
             return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Unexpected case: " + main);
@@ -222,9 +222,7 @@ public class BasicTrie {
 
         // Cleaning up trie
         if (main instanceof TNode) {
-            if (parent != null) {
-                clean (parent, level - width);
-            }
+            clean (parent, level - this.width);
             return false;
         }
         throw new RuntimeException ("Unexpected case: " + main);
@@ -271,18 +269,16 @@ public class BasicTrie {
             if (res.type == ResultType.NOTFOUND || res.type == ResultType.RESTART) {
                 return res;
             }
-            
+
             if (i.getMain () instanceof TNode) {
-                cleanParent (parent, i, k.hashCode (), level - width);
+                cleanParent (parent, i, k.hashCode (), level - this.width);
             }
             return res;
         }
 
         // Cleaning up trie
         if (main instanceof TNode) {
-            if (parent != null) {
-                clean (parent, level - width);
-            }
+            clean (parent, level - this.width);
             return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Unexpected case: " + main);
@@ -325,7 +321,7 @@ public class BasicTrie {
 
     private MainNode toCompressed (final CNode cn, final int level) {
         final CNode ncn = cn.copied ();
-        
+
         // Resurrect tombed nodes.
         for (int i = 0; i < ncn.array.length; i++) {
             final BranchNode an = ncn.array [i];
@@ -334,13 +330,13 @@ public class BasicTrie {
                 ncn.array [i] = tn.untombed ();
             }
         }
-        
+
         return toContracted (ncn, level);
     }
 
     private MainNode toContracted (final CNode cn, final int level) {
         if (level > 0 && 1 == cn.array.length) {
-            final BranchNode bn = cn.array[0];
+            final BranchNode bn = cn.array [0];
             if (bn instanceof SNode) {
                 return ((SNode) bn).tombed ();
             }
@@ -527,7 +523,7 @@ public class BasicTrie {
             return INODE_UPDATER.get (this);
         }
 
-        public boolean casMain (MainNode m, MainNode nm) {
+        public boolean casMain (final MainNode m, final MainNode nm) {
             return INODE_UPDATER.compareAndSet (this, m, nm);
         }
 
@@ -560,12 +556,14 @@ public class BasicTrie {
         }
 
         /**
-         * Builds a copy of this {@link CNode} instance where a sub {@link BranchNode}
-         * designated by a position has been replaced by another one.
+         * Builds a copy of this {@link CNode} instance where a sub
+         * {@link BranchNode} designated by a position has been replaced by
+         * another one.
          * 
          * @param position
          *            an integer position
-         * @param bn a {@link BranchNode} instance
+         * @param bn
+         *            a {@link BranchNode} instance
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode updated (final int position, final BranchNode bn) {
@@ -580,16 +578,11 @@ public class BasicTrie {
          * @param flagPos
          *            a {@link FlagPos} instance
          * @return a copy of this {@link CNode} instance where where a sub-node
-         *         designated by flag & a position has been removed or null if
-         *         the resulting CNode would be empty.
+         *         designated by flag & a position has been removed.
          */
         public CNode removed (final FlagPos flagPos) {
             final BranchNode[] narr = BasicTrie.removed (this.array, flagPos.position);
-            if (narr.length == 0) {
-                return null;
-            } else {
-                return new CNode (narr, this.bitmap - flagPos.flag);
-            }
+            return new CNode (narr, this.bitmap - flagPos.flag);
         }
 
         /**
@@ -598,9 +591,9 @@ public class BasicTrie {
          * @return a {@link CNode} copy
          */
         public CNode copied () {
-            final BranchNode[] narr = new BranchNode[array.length];
-            System.arraycopy (this.array, 0, narr, 0, array.length);
-            return new CNode (narr, bitmap);
+            final BranchNode[] narr = new BranchNode[this.array.length];
+            System.arraycopy (this.array, 0, narr, 0, this.array.length);
+            return new CNode (narr, this.bitmap);
         }
 
         /**
@@ -610,8 +603,7 @@ public class BasicTrie {
          * @param filter
          *            a {@link Filter} instance
          * @return a copy of this {@link CNode} instance where its sub-nodes
-         *         have been filtered, or null if the resulting CNode would be
-         *         empty.
+         *         have been filtered.
          */
         public CNode filtered (final Filter filter) {
             int traversed = 0;
@@ -768,7 +760,7 @@ public class BasicTrie {
          * @param v
          *            its value
          */
-        TNode (Object k, Object v) {
+        TNode (final Object k, final Object v) {
             super (k, v);
         }
 
