@@ -214,8 +214,7 @@ public class BasicTrie {
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
-                    final BranchNode[] narr = updated (cn.array, flagPos.position, nin);
-                    final CNode ncn = new CNode (narr, cn.bitmap);
+                    final CNode ncn = cn.updated (flagPos.position, nin);
                     return i.casMain (main, ncn);
                 }
             }
@@ -670,15 +669,16 @@ public class BasicTrie {
         }
 
         /**
-         * Builds a copy of this {@link CNode} instance where a sub-node
+         * Builds a copy of this {@link CNode} instance where a sub {@link BranchNode}
          * designated by a position has been replaced by another one.
          * 
          * @param position
          *            an integer position
+         * @param bn a {@link BranchNode} instance
          * @return a copy of this {@link CNode} instance with the updated node.
          */
-        public CNode updated (final int position, final SNode nsn) {
-            final BranchNode[] narr = BasicTrie.updated (this.array, position, nsn);
+        public CNode updated (final int position, final BranchNode bn) {
+            final BranchNode[] narr = BasicTrie.updated (this.array, position, bn);
             return new CNode (narr, this.bitmap);
         }
 
