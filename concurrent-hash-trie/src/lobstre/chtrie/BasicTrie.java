@@ -178,7 +178,7 @@ public class BasicTrie {
             clean (parent, level - width);
             return new Result (ResultType.RESTART, null);
         }
-        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
+        throw new RuntimeException ("Unexpected case: " + main);
     }
 
     private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
@@ -227,7 +227,7 @@ public class BasicTrie {
             }
             return false;
         }
-        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
+        throw new RuntimeException ("Unexpected case: " + main);
     }
 
     private Result iremove (final INode i, final Object k, final int level, final INode parent) {
@@ -266,7 +266,7 @@ public class BasicTrie {
                 }
             }
             if (null == res) {
-                throw new RuntimeException ("Found CNODE/SNODE.!tomb");
+                throw new RuntimeException ("Unexpected case: " + an);
             }
             if (res.type == ResultType.NOTFOUND || res.type == ResultType.RESTART) {
                 return res;
@@ -285,7 +285,7 @@ public class BasicTrie {
             }
             return new Result (ResultType.RESTART, null);
         }
-        throw new RuntimeException ("Found CNODE/SNODE.!tomb");
+        throw new RuntimeException ("Unexpected case: " + main);
     }
 
     private void cleanParent (final INode parent, final INode i, final int hashCode, final int level) {
