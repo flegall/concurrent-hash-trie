@@ -222,7 +222,7 @@ public class BasicTrie {
         }
 
         // Cleaning up trie
-        if ((main instanceof TNode) || main == null) {
+        if (main instanceof TNode) {
             if (parent != null) {
                 clean (parent);
             }
