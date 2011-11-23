@@ -223,7 +223,7 @@ public class BasicTrie {
         // Cleaning up trie
         if (main instanceof TNode) {
             if (parent != null) {
-                clean (parent);
+                clean (parent, level - width);
             }
             return false;
         }
@@ -255,7 +255,8 @@ public class BasicTrie {
                 final SNode sn = (SNode) an;
                 if (sn.key.equals (k)) {
                     final CNode ncn = cn.removed (flagPos);
-                    if (i.casMain (cn, ncn)) {
+                    final MainNode cntn = toContracted (ncn, level);
+                    if (i.casMain (cn, cntn)) {
                         res = new Result (ResultType.FOUND, sn.value);
                     } else {
                         res = new Result (ResultType.RESTART, null);
@@ -270,100 +271,23 @@ public class BasicTrie {
             if (res.type == ResultType.NOTFOUND || res.type == ResultType.RESTART) {
                 return res;
             }
-            if (parent != null && tombCompress (i)) {
-                contractParent (parent, i, k.hashCode (), level - this.width);
+            
+            if (i.getMain () instanceof TNode) {
+                cleanParent (parent, i, k.hashCode (), level - width);
             }
             return res;
         }
 
         // Cleaning up trie
-        if ((main instanceof TNode) || main == null) {
+        if (main instanceof TNode) {
             if (parent != null) {
-                clean (parent);
+                clean (parent, level - width);
             }
             return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Found CNODE/SNODE.!tomb");
     }
 
-    private boolean tombCompress (final INode i) {
-        while (true) {
-            final MainNode m = i.getMain ();
-
-            // No need to compress is not a CNode
-            if (!(m instanceof CNode)) {
-                return false;
-            }
-
-            final MainNode mwt = toWeakTombed ((CNode) m);
-
-            if (m == mwt) {
-                return false;
-            } else if (i.casMain (m, mwt)) {
-                if (mwt == null || mwt instanceof TNode) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                continue;
-            }
-        }
-    }
-
-    private MainNode toWeakTombed (final CNode cn) {
-        final CNode f = cn.filtered (singletonNonNullInodeFilter ());
-        if (f.array.length > 1) {
-            return cn;
-        } else if (f.array.length == 1) {
-            final BranchNode n = f.array [0];
-            if (n instanceof SNode) {
-                return ((SNode) n).tombed ();
-            } else {
-                return f;
-            }
-        } else {
-            return null;
-        }
-    }
-
-    private void contractParent (final INode parent, final INode i, final int hashCode, final int level) {
-        while (true) {
-            final MainNode m = i.getMain ();
-            final MainNode pm = parent.getMain ();
-            if (pm instanceof CNode) {
-                final CNode pcn = (CNode) pm;
-                final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
-                if (0L == (flagPos.flag & pcn.bitmap)) {
-                    return;
-                }
-                final BranchNode sub = pcn.array [flagPos.position];
-                if (sub != i) {
-                    return;
-                }
-                if (null == m) {
-                    final CNode ncn = pcn.removed (flagPos);
-                    if (parent.casMain (pcn, ncn)) {
-                        return;
-                    } else {
-                        continue;
-                    }
-                } else {
-                    if (m instanceof TNode) {
-                        final CNode ncn = pcn.updated (flagPos.position, ((TNode) m).untombed ());
-                        if (parent.casMain (pcn, ncn)) {
-                            return;
-                        } else {
-                            continue;
-                        }
-                    }
-                }
-            }
-            return;
-        }
-    }
-    
-    @SuppressWarnings("unused")
     private void cleanParent (final INode parent, final INode i, final int hashCode, final int level) {
         while (true) {
             final MainNode m = i.getMain ();
@@ -379,8 +303,7 @@ public class BasicTrie {
                     return;
                 }
                 if (m instanceof TNode) {
-                    final CNode ncn = pcn.updated (flagPos.position, 
-                            ((TNode) m).untombed ());
+                    final CNode ncn = pcn.updated (flagPos.position, ((TNode) m).untombed ());
                     if (parent.casMain (pcn, ncn)) {
                         return;
                     } else {
@@ -393,34 +316,10 @@ public class BasicTrie {
         }
     }
 
-    private void clean (final INode i) {
-        final MainNode m = i.getMain ();
-        if (m instanceof CNode) {
-            i.casMain (m, toCompressed ((CNode) m));
-        }
-    }
-
     private void clean (final INode i, final int level) {
         final MainNode m = i.getMain ();
         if (m instanceof CNode) {
             i.casMain (m, toCompressed ((CNode) m, level));
-        }
-    }
-
-    private MainNode toCompressed (final CNode cn) {
-        final CNode ncn = cn.filtered (singletonNonNullInodeFilter ());
-        for (int i = 0; i < ncn.array.length; i++) {
-            final BranchNode an = ncn.array [i];
-            final TNode tn = getTombNode (an);
-            if (null != tn) {
-                ncn.array [i] = tn.untombed ();
-            }
-        }
-
-        if (Long.bitCount (ncn.bitmap) > 0) {
-            return ncn;
-        } else {
-            return null;
         }
     }
 
@@ -467,14 +366,6 @@ public class BasicTrie {
 
     private INode getRoot () {
         return ROOT_UPDATER.get (this);
-    }
-
-    private Filter singletonNonNullInodeFilter () {
-        return new Filter () {
-            public boolean accepts (final BranchNode an) {
-                return an instanceof SNode || an instanceof INode && ((INode) an).getMain () != null;
-            }
-        };
     }
 
     /**
