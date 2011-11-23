@@ -152,7 +152,7 @@ public class BasicTrie {
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie
-            if (0 == (flagPos.flag & cn.bitmap)) {
+            if (0L == (flagPos.flag & cn.bitmap)) {
                 return new Result (ResultType.NOTFOUND, null);
             }
 
@@ -190,7 +190,7 @@ public class BasicTrie {
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie, let's insert it
-            if (0 == (flagPos.flag & cn.bitmap)) {
+            if (0L == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (k, v);
                 final CNode ncn = cn.inserted (flagPos, snode);
                 return i.casMain (main, ncn);
@@ -239,7 +239,7 @@ public class BasicTrie {
             final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie
-            if (0 == (flagPos.flag & cn.bitmap)) {
+            if (0L == (flagPos.flag & cn.bitmap)) {
                 return new Result (ResultType.NOTFOUND, null);
             }
 
@@ -334,7 +334,7 @@ public class BasicTrie {
             if (pm instanceof CNode) {
                 final CNode pcn = (CNode) pm;
                 final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
-                if (0 == (flagPos.flag & pcn.bitmap)) {
+                if (0L == (flagPos.flag & pcn.bitmap)) {
                     return;
                 }
                 final BranchNode sub = pcn.array [flagPos.position];
@@ -371,7 +371,7 @@ public class BasicTrie {
             if (pm instanceof CNode) {
                 final CNode pcn = (CNode) pm;
                 final FlagPos flagPos = flagPos (hashCode, level, pcn.bitmap, this.width);
-                if (0 == (flagPos.flag & pcn.bitmap)) {
+                if (0L == (flagPos.flag & pcn.bitmap)) {
                     return;
                 }
                 final BranchNode sub = pcn.array [flagPos.position];
