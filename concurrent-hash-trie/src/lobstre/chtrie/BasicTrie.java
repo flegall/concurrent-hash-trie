@@ -475,12 +475,26 @@ public class BasicTrie {
             INODE_UPDATER.set (this, n);
         }
 
+        /**
+         * Gets the {@link MainNode} instance this {@link INode} contains
+         * 
+         * @return the {@link MainNode}
+         */
         public MainNode getMain () {
             return INODE_UPDATER.get (this);
         }
 
-        public boolean casMain (final MainNode m, final MainNode nm) {
-            return INODE_UPDATER.compareAndSet (this, m, nm);
+        /**
+         * Compare and set the {@link MainNode} instance of this {@link INode}
+         * 
+         * @param expected
+         *            the expected {@link MainNode} instance
+         * @param update
+         *            the updated {@link MainNode} instance
+         * @return true if it sets
+         */
+        public boolean casMain (final MainNode expected, final MainNode update) {
+            return INODE_UPDATER.compareAndSet (this, expected, update);
         }
 
         /**
@@ -556,7 +570,7 @@ public class BasicTrie {
          * Builds an empty {@link CNode} instance
          */
         CNode () {
-            this.array = new BranchNode [] {};
+            this.array = new BranchNode[] {};
             this.bitmap = 0L;
         }
 
