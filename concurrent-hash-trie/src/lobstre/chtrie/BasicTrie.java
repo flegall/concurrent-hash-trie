@@ -6,8 +6,7 @@ public class BasicTrie {
     /**
      * Root node of the trie
      */
-    @SuppressWarnings("unused")
-    private volatile INode root = null;
+    private final INode root;
 
     /**
      * Width in bits
@@ -18,7 +17,7 @@ public class BasicTrie {
      * Builds a {@link BasicTrie} instance
      */
     public BasicTrie () {
-        this.width = 6;
+        this (6);
     }
 
     /**
@@ -37,6 +36,7 @@ public class BasicTrie {
      *            </ul>
      */
     public BasicTrie (final int width) {
+        this.root = new INode (new CNode ());
         if (width > 6) {
             this.width = 6;
         } else if (width < 1) {
@@ -56,19 +56,8 @@ public class BasicTrie {
      */
     public void insert (final Object k, final Object v) {
         while (true) {
-            final INode r = getRoot ();
-            if (r == null || r.getMain () == null) {
-                // Insertion on an empty trie.
-                final CNode cn = new CNode (new SNode (k, v), this.width);
-                final INode nr = new INode (cn);
-                if (casRoot (r, nr)) {
-                    break;
-                } else {
-                    continue;
-                }
-                // Else tries inserting in a populated trie
-            } else if (iinsert (r, k, v, 0, null)) {
-                break;
+            if (iinsert (this.root, k, v, 0, null)) {
+                return;
             } else {
                 continue;
             }
@@ -84,27 +73,17 @@ public class BasicTrie {
      */
     public Object lookup (final Object k) {
         while (true) {
-            final INode r = getRoot ();
-            if (null == r) {
-                // Empty trie
+            // Getting lookup result
+            final Result res = ilookup (this.root, k, 0, null);
+            switch (res.type) {
+            case FOUND:
+                return res.result;
+            case NOTFOUND:
                 return null;
-            } else if (r.getMain () == null) {
-                // Null Inode root, fix it and retry
-                casRoot (r, null);
+            case RESTART:
                 continue;
-            } else {
-                // Getting lookup result
-                final Result res = ilookup (r, k, 0, null);
-                switch (res.type) {
-                case FOUND:
-                    return res.result;
-                case NOTFOUND:
-                    return null;
-                case RESTART:
-                    continue;
-                default:
-                    throw new RuntimeException ("Unexpected case: " + res.type);
-                }
+            default:
+                throw new RuntimeException ("Unexpected case: " + res.type);
             }
         }
     }
@@ -118,27 +97,17 @@ public class BasicTrie {
      */
     public boolean remove (final Object k) {
         while (true) {
-            final INode r = getRoot ();
-            if (null == r) {
-                // Empty trie
+            // Getting remove result
+            final Result res = iremove (this.root, k, 0, null);
+            switch (res.type) {
+            case FOUND:
+                return true;
+            case NOTFOUND:
                 return false;
-            } else if (r.getMain () == null) {
-                // Null Inode trie, fix it and retry
-                casRoot (r, null);
+            case RESTART:
                 continue;
-            } else {
-                // Getting remove result
-                final Result res = iremove (r, k, 0, null);
-                switch (res.type) {
-                case FOUND:
-                    return true;
-                case NOTFOUND:
-                    return false;
-                case RESTART:
-                    continue;
-                default:
-                    throw new RuntimeException ("Unexpected case: " + res.type);
-                }
+            default:
+                throw new RuntimeException ("Unexpected case: " + res.type);
             }
         }
     }
@@ -356,14 +325,6 @@ public class BasicTrie {
         return null;
     }
 
-    private boolean casRoot (final INode r, final INode nr) {
-        return ROOT_UPDATER.compareAndSet (this, r, nr);
-    }
-
-    private INode getRoot () {
-        return ROOT_UPDATER.get (this);
-    }
-
     /**
      * Returns a copy an {@link BranchNode} array with an updated
      * {@link BranchNode} value at a certain position.
@@ -473,11 +434,6 @@ public class BasicTrie {
         final long flag = 1L << subHash;
         return flag;
     }
-
-    /**
-     * Atomic Updater for the BasicTrie.root field
-     */
-    private static final AtomicReferenceFieldUpdater<BasicTrie, INode> ROOT_UPDATER = AtomicReferenceFieldUpdater.newUpdater (BasicTrie.class, INode.class, "root");
 
     static enum ResultType {
         FOUND, NOTFOUND, RESTART
@@ -597,42 +553,11 @@ public class BasicTrie {
         }
 
         /**
-         * Builds a copy of this {@link CNode} instance where its sub-nodes have
-         * been filtered.
-         * 
-         * @param filter
-         *            a {@link Filter} instance
-         * @return a copy of this {@link CNode} instance where its sub-nodes
-         *         have been filtered.
+         * Builds an empty {@link CNode} instance
          */
-        public CNode filtered (final Filter filter) {
-            int traversed = 0;
-            long filteredBitmap = 0L;
-            for (int i = 0; i < 64; i++) {
-                final long flag = 1L << i;
-                if (0L != (this.bitmap & flag)) {
-                    final BranchNode an = this.array [traversed++];
-                    if (filter.accepts (an)) {
-                        filteredBitmap += flag;
-                    }
-                }
-            }
-
-            final BranchNode[] filtered = new BranchNode[Long.bitCount (filteredBitmap)];
-
-            traversed = 0;
-            int copied = 0;
-            for (int i = 0; i < 64; i++) {
-                final long flag = 1L << i;
-                if (0L != (filteredBitmap & flag)) {
-                    filtered [copied++] = this.array [traversed];
-                }
-                if (0L != (this.bitmap & flag)) {
-                    traversed++;
-                }
-            }
-
-            return new CNode (filtered, filteredBitmap);
+        CNode () {
+            this.array = new BranchNode [] {};
+            this.bitmap = 0L;
         }
 
         /**
@@ -798,17 +723,5 @@ public class BasicTrie {
          * Its position in the array
          */
         public final int position;
-    }
-
-    /**
-     * A filter interface. Has a single method for accepting/rejecting object(s)
-     */
-    static interface Filter {
-        /**
-         * @param an
-         *            {@link BranchNode} instance
-         * @return true if the {@link BranchNode} is accepted
-         */
-        public boolean accepts (BranchNode an);
     }
 }
