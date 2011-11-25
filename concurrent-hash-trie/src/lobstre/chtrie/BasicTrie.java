@@ -53,13 +53,20 @@ public class BasicTrie {
      *            a key {@link Object}
      * @param value
      *            a value Object
+     * @return the previous value associated to key
      */
-    public void insert (final Object key, final Object value) {
+    public Object insert (final Object key, final Object value) {
         while (true) {
-            if (iinsert (this.root, hash (key), key, value, 0, null)) {
-                return;
-            } else {
+            final Result res = iinsert (this.root, hash (key), key, value, 0, null);
+            switch (res.type) {
+            case FOUND:
+                return res.result;
+            case NOTFOUND:
+                return null;
+            case RESTART:
                 continue;
+            default:
+                throw new RuntimeException ("Unexpected case: " + res.type);
             }
         }
     }
@@ -150,7 +157,7 @@ public class BasicTrie {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private boolean iinsert (final INode i, final int hashcode, final Object k, final Object v, final int level, final INode parent) {
+    private Result iinsert (final INode i, final int hashcode, final Object k, final Object v, final int level, final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -162,7 +169,7 @@ public class BasicTrie {
             if (0L == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (hashcode, new Entry (k, v));
                 final CNode ncn = cn.inserted (flagPos, snode);
-                return i.casMain (main, ncn);
+                return i.casMain (main, ncn) ? new Result (ResultType.FOUND, null) : new Result (ResultType.RESTART, null);
             }
 
             final BranchNode an = cn.array [flagPos.position];
@@ -178,13 +185,13 @@ public class BasicTrie {
                 if (sn.hashcode == hashcode) {
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
-                    return i.casMain (main, ncn);
+                    return i.casMain (main, ncn) ? new Result (ResultType.FOUND, sn.entry.value) : new Result (ResultType.RESTART, null);
                 } else {
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
                     final CNode ncn = cn.updated (flagPos.position, nin);
-                    return i.casMain (main, ncn);
+                    return i.casMain (main, ncn) ? new Result (ResultType.FOUND, null) : new Result (ResultType.RESTART, null);
                 }
             }
         }
@@ -192,7 +199,7 @@ public class BasicTrie {
         // Cleaning up trie
         if (main instanceof TNode) {
             clean (parent, level - this.width);
-            return false;
+            return new Result (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Unexpected case: " + main);
     }
@@ -708,19 +715,22 @@ public class BasicTrie {
     static class Entry {
         /**
          * Builds an {@link Entry} from key-value mapping
-         * @param key the key {@link Object}
-         * @param value the value {@link Object}
+         * 
+         * @param key
+         *            the key {@link Object}
+         * @param value
+         *            the value {@link Object}
          */
         public Entry (Object key, Object value) {
             this.key = key;
             this.value = value;
         }
-    
+
         /**
          * The object key
          */
         public final Object key;
-    
+
         /**
          * The object value
          */

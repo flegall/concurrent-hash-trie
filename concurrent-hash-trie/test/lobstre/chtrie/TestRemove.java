@@ -5,7 +5,7 @@ public class TestRemove {
         final BasicTrie bt = new BasicTrie ();
 
         for (int i = 0; i < 10000; i++) {
-            bt.insert (Integer.valueOf (i), Integer.valueOf (i));
+            TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i)));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (Integer.valueOf (i), lookup);
         }
@@ -29,11 +29,11 @@ public class TestRemove {
         bt.remove (v);
         Object foundV = bt.lookup (v);
         TestHelper.assertEquals (null, foundV);
-        bt.insert (v, v);
+        TestHelper.assertEquals (null, bt.insert (v, v));
         foundV = bt.lookup (v);
         TestHelper.assertEquals (v, foundV);
         
-        bt.insert (v, -1);
-        bt.insert (v, v);
+        TestHelper.assertEquals (v, bt.insert (v, Integer.valueOf (-1)));
+        TestHelper.assertEquals (Integer.valueOf (-1), bt.insert (v, v));
     }
 }
