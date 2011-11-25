@@ -49,14 +49,14 @@ public class BasicTrie {
     /**
      * Inserts or updates a key/value mapping.
      * 
-     * @param k
+     * @param key
      *            a key {@link Object}
-     * @param v
+     * @param value
      *            a value Object
      */
-    public void insert (final Object k, final Object v) {
+    public void insert (final Object key, final Object value) {
         while (true) {
-            if (iinsert (this.root, k, v, 0, null)) {
+            if (iinsert (this.root, hash (key), key, value, 0, null)) {
                 return;
             } else {
                 continue;
@@ -67,14 +67,14 @@ public class BasicTrie {
     /**
      * Looks up the value associated to a key
      * 
-     * @param k
+     * @param key
      *            a key {@link Object}
      * @return the value associated to k
      */
-    public Object lookup (final Object k) {
+    public Object lookup (final Object key) {
         while (true) {
             // Getting lookup result
-            final Result res = ilookup (this.root, k, 0, null);
+            final Result res = ilookup (this.root, hash (key), key, 0, null);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -91,14 +91,14 @@ public class BasicTrie {
     /**
      * Removes a key/value mapping
      * 
-     * @param k
+     * @param key
      *            the key Object
      * @return true if removed was performed, false otherwises
      */
-    public boolean remove (final Object k) {
+    public boolean remove (final Object key) {
         while (true) {
             // Getting remove result
-            final Result res = iremove (this.root, k, 0, null);
+            final Result res = iremove (this.root, hash (key), key, 0, null);
             switch (res.type) {
             case FOUND:
                 return true;
@@ -112,13 +112,13 @@ public class BasicTrie {
         }
     }
 
-    private Result ilookup (final INode i, final Object k, final int level, final INode parent) {
+    private Result ilookup (final INode i, final int hashcode, final Object k, final int level, final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
-            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+            final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie
             if (0L == (flagPos.flag & cn.bitmap)) {
@@ -129,13 +129,13 @@ public class BasicTrie {
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                return ilookup (sin, k, level + this.width, i);
+                return ilookup (sin, hashcode, k, level + this.width, i);
             }
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
-                if (sn.key.equals (k)) {
-                    return new Result (ResultType.FOUND, sn.value);
+                if (sn.hashcode == hashcode) {
+                    return new Result (ResultType.FOUND, sn.entry.value);
                 } else {
                     return new Result (ResultType.NOTFOUND, null);
                 }
@@ -150,17 +150,17 @@ public class BasicTrie {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private boolean iinsert (final INode i, final Object k, final Object v, final int level, final INode parent) {
+    private boolean iinsert (final INode i, final int hashcode, final Object k, final Object v, final int level, final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
-            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+            final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie, let's insert it
             if (0L == (flagPos.flag & cn.bitmap)) {
-                final SNode snode = new SNode (k, v);
+                final SNode snode = new SNode (hashcode, new Entry (k, v));
                 final CNode ncn = cn.inserted (flagPos, snode);
                 return i.casMain (main, ncn);
             }
@@ -169,13 +169,13 @@ public class BasicTrie {
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                return iinsert (sin, k, v, level + this.width, i);
+                return iinsert (sin, hashcode, k, v, level + this.width, i);
             }
             if (an instanceof SNode) {
                 final SNode sn = (SNode) an;
-                final SNode nsn = new SNode (k, v);
+                final SNode nsn = new SNode (hashcode, new Entry (k, v));
                 // Found the hash locally, let's see if it matches
-                if (sn.key.equals (k)) {
+                if (sn.hashcode == hashcode) {
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     return i.casMain (main, ncn);
@@ -197,13 +197,13 @@ public class BasicTrie {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result iremove (final INode i, final Object k, final int level, final INode parent) {
+    private Result iremove (final INode i, final int hashcode, final Object k, final int level, final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
         if (main instanceof CNode) {
             final CNode cn = (CNode) main;
-            final FlagPos flagPos = flagPos (k.hashCode (), level, cn.bitmap, this.width);
+            final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie
             if (0L == (flagPos.flag & cn.bitmap)) {
@@ -215,16 +215,16 @@ public class BasicTrie {
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                res = iremove (sin, k, level + this.width, i);
+                res = iremove (sin, hashcode, k, level + this.width, i);
             }
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
-                if (sn.key.equals (k)) {
+                if (sn.hashcode == hashcode) {
                     final CNode ncn = cn.removed (flagPos);
                     final MainNode cntn = toContracted (ncn, level);
                     if (i.casMain (cn, cntn)) {
-                        res = new Result (ResultType.FOUND, sn.value);
+                        res = new Result (ResultType.FOUND, sn.entry);
                     } else {
                         res = new Result (ResultType.RESTART, null);
                     }
@@ -240,7 +240,7 @@ public class BasicTrie {
             }
 
             if (i.getMain () instanceof TNode) {
-                cleanParent (parent, i, k.hashCode (), level - this.width);
+                cleanParent (parent, i, hashcode, level - this.width);
             }
             return res;
         }
@@ -323,6 +323,23 @@ public class BasicTrie {
             }
         }
         return null;
+    }
+
+    static int hash (final Object key) {
+        int h = key.hashCode ();
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+        h ^= (h >>> 20) ^ (h >>> 12);
+        return h ^ (h >>> 7) ^ (h >>> 4);
+    }
+    
+    static int hash(int h) {
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+        h ^= (h >>> 20) ^ (h >>> 12);
+        return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
     /**
@@ -567,7 +584,7 @@ public class BasicTrie {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode sNode, final int width) {
-            final long flag = BasicTrie.flag (sNode.key.hashCode (), 0, width);
+            final long flag = BasicTrie.flag (sNode.hashcode, 0, width);
             this.array = new BranchNode[] { sNode };
             this.bitmap = flag;
         }
@@ -585,8 +602,8 @@ public class BasicTrie {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode sn1, final SNode sn2, final int level, final int width) {
-            final long flag1 = BasicTrie.flag (sn1.key.hashCode (), level, width);
-            final long flag2 = BasicTrie.flag (sn2.key.hashCode (), level, width);
+            final long flag1 = BasicTrie.flag (sn1.hashcode, level, width);
+            final long flag2 = BasicTrie.flag (sn2.hashcode, level, width);
             if (flag1 < flag2) {
                 this.array = new BranchNode[] { sn1, sn2 };
             } else {
@@ -620,79 +637,102 @@ public class BasicTrie {
         public final long bitmap;
     }
 
-    static abstract class BaseKVNode {
+    static abstract class BaseSNode {
         /**
          * Builds a {@link SNode} instance
          * 
-         * @param k
-         *            its key object
-         * @param v
-         *            its value
-         * @param tomb
-         *            the tomb flag.
+         * @param hashcode
+         *            its hash code value
+         * @param e
+         *            its {@link Entry} value
          */
-        BaseKVNode (final Object k, final Object v) {
-            this.key = k;
-            this.value = v;
+        BaseSNode (final int hashcode, final Entry e) {
+            this.hashcode = hashcode;
+            this.entry = e;
         }
 
         /**
          * The object key
          */
-        public final Object key;
+        public final int hashcode;
 
         /**
          * The object value
          */
-        public final Object value;
+        public final Entry entry;
     }
 
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SNode extends BaseKVNode implements BranchNode {
+    static class SNode extends BaseSNode implements BranchNode {
         /**
          * Builds a {@link SNode} instance
          * 
-         * @param k
-         *            its key object
-         * @param v
-         *            its value
+         * @param hashcode
+         *            its hash code value
+         * @param e
+         *            its {@link Entry} value
          */
-        SNode (final Object k, final Object v) {
-            super (k, v);
+        SNode (final int hashcode, final Entry e) {
+            super (hashcode, e);
         }
 
         /**
          * @return a copied {@link TNode} for this instance.
          */
         public TNode tombed () {
-            return new TNode (this.key, this.value);
+            return new TNode (this.hashcode, this.entry);
         }
     }
 
     /**
      * A Tombed node instance
      */
-    static class TNode extends BaseKVNode implements MainNode {
+    static class TNode extends BaseSNode implements MainNode {
         /**
          * Builds a {@link TNode} instance
          * 
-         * @param k
-         *            its key object
-         * @param v
-         *            its value
+         * @param hashcode
+         *            its hash code value
+         * @param e
+         *            its {@link Entry} value
          */
-        TNode (final Object k, final Object v) {
-            super (k, v);
+        TNode (final int hashcode, final Entry e) {
+            super (hashcode, e);
         }
 
         /**
          * @return a copied {@link SNode} of this instance
          */
         public SNode untombed () {
-            return new SNode (this.key, this.value);
+            return new SNode (this.hashcode, this.entry);
         }
+    }
+
+    /**
+     * {@link Entry} in the trie
+     */
+    static class Entry {
+        /**
+         * Builds an {@link Entry} from key-value mapping
+         * @param key the key {@link Object}
+         * @param value the value {@link Object}
+         */
+        public Entry (Object key, Object value) {
+            this.key = key;
+            this.value = value;
+        }
+    
+        /**
+         * The object key
+         */
+        public final Object key;
+    
+        /**
+         * The object value
+         */
+        public final Object value;
     }
 
     /**
