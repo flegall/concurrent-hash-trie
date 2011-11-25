@@ -339,13 +339,8 @@ public class BasicTrie {
      */
     static BranchNode[] updated (final BranchNode[] array, final int position, final BranchNode n) {
         final BranchNode[] narr = new BranchNode[array.length];
-        for (int i = 0; i < array.length; i++) {
-            if (i == position) {
-                narr [i] = n;
-            } else {
-                narr [i] = array [i];
-            }
-        }
+        System.arraycopy (array, 0, narr, 0, array.length);
+        narr [position] = n;
         return narr;
     }
 
@@ -363,15 +358,9 @@ public class BasicTrie {
      */
     static BranchNode[] inserted (final BranchNode[] array, final int position, final BranchNode n) {
         final BranchNode[] narr = new BranchNode[array.length + 1];
-        for (int i = 0; i < array.length + 1; i++) {
-            if (i < position) {
-                narr [i] = array [i];
-            } else if (i == position) {
-                narr [i] = n;
-            } else {
-                narr [i] = array [i - 1];
-            }
-        }
+        System.arraycopy (array, 0, narr, 0, position);
+        System.arraycopy (array, position, narr, position + 1, array.length - position);
+        narr [position] = n;
         return narr;
     }
 
@@ -387,13 +376,8 @@ public class BasicTrie {
      */
     static BranchNode[] removed (final BranchNode[] array, final int position) {
         final BranchNode[] narr = new BranchNode[array.length - 1];
-        for (int i = 0; i < array.length; i++) {
-            if (i < position) {
-                narr [i] = array [i];
-            } else if (i > position) {
-                narr [i - 1] = array [i];
-            }
-        }
+        System.arraycopy (array, 0, narr, 0, position);
+        System.arraycopy (array, position + 1, narr, position, array.length - position - 1);
         return narr;
     }
 
