@@ -169,7 +169,11 @@ public class BasicTrie {
             if (0L == (flagPos.flag & cn.bitmap)) {
                 final SNode snode = new SNode (hashcode, new Entry (k, v));
                 final CNode ncn = cn.inserted (flagPos, snode);
-                return i.casMain (main, ncn) ? new Result (ResultType.FOUND, null) : new Result (ResultType.RESTART, null);
+                if (i.casMain (main, ncn)) {
+                    return new Result (ResultType.FOUND, null);
+                } else {
+                    return new Result (ResultType.RESTART, null);
+                }
             }
 
             final BranchNode an = cn.array [flagPos.position];
@@ -185,13 +189,21 @@ public class BasicTrie {
                 if (sn.hashcode == hashcode) {
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
-                    return i.casMain (main, ncn) ? new Result (ResultType.FOUND, sn.entry.value) : new Result (ResultType.RESTART, null);
+                    if (i.casMain (main, ncn)) {
+                        return new Result (ResultType.FOUND, sn.entry.value);
+                    } else {
+                        return new Result (ResultType.RESTART, null);
+                    }
                 } else {
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
                     final CNode ncn = cn.updated (flagPos.position, nin);
-                    return i.casMain (main, ncn) ? new Result (ResultType.FOUND, null) : new Result (ResultType.RESTART, null);
+                    if (i.casMain (main, ncn)) {
+                        return new Result (ResultType.FOUND, null);
+                    } else {
+                        return new Result (ResultType.RESTART, null);
+                    }
                 }
             }
         }
