@@ -142,7 +142,12 @@ public class BasicTrie {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.hash () == hashcode) {
-                    return new Result (ResultType.FOUND, sn.entry.value);
+                    final Object v = sn.get (k);
+                    if (null != v) {
+                        return new Result (ResultType.FOUND, v);
+                    } else {
+                        return new Result (ResultType.NOTFOUND, null);
+                    }
                 } else {
                     return new Result (ResultType.NOTFOUND, null);
                 }
@@ -167,7 +172,7 @@ public class BasicTrie {
 
             // Asked for a hash not in trie, let's insert it
             if (0L == (flagPos.flag & cn.bitmap)) {
-                final SNode snode = new SNode (new Entry (k, v));
+                final SNode snode = new SingletonSNode (new Entry (k, v));
                 final CNode ncn = cn.inserted (flagPos, snode);
                 if (i.casMain (main, ncn)) {
                     return new Result (ResultType.FOUND, null);
@@ -184,17 +189,18 @@ public class BasicTrie {
             }
             if (an instanceof SNode) {
                 final SNode sn = (SNode) an;
-                final SNode nsn = new SNode (new Entry (k, v));
                 // Found the hash locally, let's see if it matches
                 if (sn.hash () == hashcode) {
+                    final SNode nsn = sn.put (k, v);
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     if (i.casMain (main, ncn)) {
-                        return new Result (ResultType.FOUND, sn.entry.value);
+                        return new Result (ResultType.FOUND, sn.get (k));
                     } else {
                         return new Result (ResultType.RESTART, null);
                     }
                 } else {
+                    final SNode nsn = new SingletonSNode (new Entry (k, v));
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
@@ -240,12 +246,22 @@ public class BasicTrie {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.hash () == hashcode) {
-                    final CNode ncn = cn.removed (flagPos);
-                    final MainNode cntn = toContracted (ncn, level);
-                    if (i.casMain (cn, cntn)) {
-                        res = new Result (ResultType.FOUND, sn.entry);
+                    final SNode nsn = sn.remove (k);
+                    if (null != nsn) {
+                        final CNode ncn = cn.updated (flagPos.position, nsn);
+                        if (i.casMain (main, ncn)) {
+                            return new Result (ResultType.FOUND, sn.get (k));
+                        } else {
+                            return new Result (ResultType.RESTART, null);
+                        }
                     } else {
-                        res = new Result (ResultType.RESTART, null);
+                        final CNode ncn = cn.removed (flagPos);
+                        final MainNode cntn = toContracted (ncn, level);
+                        if (i.casMain (cn, cntn)) {
+                            res = new Result (ResultType.FOUND, sn.get (k));
+                        } else {
+                            res = new Result (ResultType.RESTART, null);
+                        }
                     }
                 } else {
                     res = new Result (ResultType.NOTFOUND, null);
@@ -472,6 +488,18 @@ public class BasicTrie {
      */
     static interface BranchNode {
     }
+    
+    static interface SNode extends BranchNode {
+        int hash ();
+        Object get (Object k);
+        SNode put (Object k, Object v);
+        SNode remove (Object k);
+        TNode tombed ();
+    }
+    
+    static interface TNode extends MainNode {
+        SNode untombed ();
+    }
 
     /**
      * A CAS-able Node which may reference either a CNode or and SNode
@@ -529,7 +557,8 @@ public class BasicTrie {
          * designated by a position has been added .
          * 
          * @param flagPos
-         *            a FlagPos instance
+         *            a {@link FlagPos} instance
+         * @param snode a {@link SNode} instance           
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode inserted (final FlagPos flagPos, final SNode snode) {
@@ -648,13 +677,13 @@ public class BasicTrie {
         public final long bitmap;
     }
 
-    static abstract class BaseSNode {
+    static abstract class BaseSingletonNode {
         /**
-         * Builds a {@link SNode} instance
+         * Builds a {@link BaseSingletonNode} instance
          * @param e
          *            its {@link Entry} value
          */
-        BaseSNode (final Entry e) {
+        BaseSingletonNode (final Entry e) {
             this.entry = e;
         }
 
@@ -667,13 +696,13 @@ public class BasicTrie {
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SNode extends BaseSNode implements BranchNode {
+    static class SingletonSNode extends BaseSingletonNode implements SNode {
         /**
-         * Builds a {@link SNode} instance
+         * Builds a {@link SingletonSNode} instance
          * @param e
          *            its {@link Entry} value
          */
-        SNode (final Entry e) {
+        SingletonSNode (final Entry e) {
             super (e);
         }
 
@@ -685,20 +714,39 @@ public class BasicTrie {
          * @return a copied {@link TNode} for this instance.
          */
         public TNode tombed () {
-            return new TNode (this.entry);
+            return new SingletonTNode (this.entry);
+        }
+
+        @Override
+        public Object get (Object k) {
+            if (this.entry.key.equals (k)) {
+                return this.entry.value;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public SNode put (Object k, Object v) {
+            return new SingletonSNode (new Entry (k, v));
+        }
+
+        @Override
+        public SNode remove (Object k) {
+            return null;
         }
     }
 
     /**
      * A Tombed node instance
      */
-    static class TNode extends BaseSNode implements MainNode {
+    static class SingletonTNode extends BaseSingletonNode implements TNode {
         /**
-         * Builds a {@link TNode} instance
+         * Builds a {@link SingletonTNode} instance
          * @param e
          *            its {@link Entry} value
          */
-        TNode (final Entry e) {
+        SingletonTNode (final Entry e) {
             super (e);
         }
 
@@ -706,7 +754,7 @@ public class BasicTrie {
          * @return a copied {@link SNode} of this instance
          */
         public SNode untombed () {
-            return new SNode (this.entry);
+            return new SingletonSNode (this.entry);
         }
     }
 
