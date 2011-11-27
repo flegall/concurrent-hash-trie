@@ -735,12 +735,12 @@ public class BasicTrie {
         /**
          * The key object
          */
-        public final Object key;
+        protected final Object key;
 
         /**
          * The value object
          */
-        public final Object value;
+        protected final Object value;
     }
 
     /**
