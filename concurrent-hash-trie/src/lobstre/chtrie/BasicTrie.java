@@ -250,21 +250,17 @@ public class BasicTrie {
                         res = new Result (ResultType.NOTFOUND, null);
                     } else {
                         final SNode nsn = sn.remove (k);
+                        final MainNode replacement;
                         if (null != nsn) {
-                            final CNode ncn = cn.updated (flagPos.position, nsn);
-                            if (i.casMain (main, ncn)) {
-                                res = new Result (ResultType.FOUND, previous);
-                            } else {
-                                res = new Result (ResultType.RESTART, null);
-                            }
+                            replacement = cn.updated (flagPos.position, nsn);
                         } else {
                             final CNode ncn = cn.removed (flagPos);
-                            final MainNode cntn = toContracted (ncn, level);
-                            if (i.casMain (cn, cntn)) {
-                                res = new Result (ResultType.FOUND, previous);
-                            } else {
-                                res = new Result (ResultType.RESTART, null);
-                            }
+                            replacement = toContracted (ncn, level);
+                        }
+                        if (i.casMain (main, replacement)) {
+                            res = new Result (ResultType.FOUND, previous);
+                        } else {
+                            res = new Result (ResultType.RESTART, null);
                         }
                     }
                 } else {
@@ -515,7 +511,7 @@ public class BasicTrie {
         Object get (Object k);
 
         /**
-         * Sets a mapping and returns a modified {@link SNode} copy
+         * Sets a mapping and returns a modified {@link SNode} copy.
          * 
          * @param k
          *            the key {@link Object}
@@ -527,6 +523,9 @@ public class BasicTrie {
 
         /**
          * Removes a mapping and returns a modified {@link SNode} copy
+         * <p>
+         * This method only works on an existing mapping, make sure there is
+         * one, before calling this method.
          * 
          * @param k
          *            the key {@link Object}

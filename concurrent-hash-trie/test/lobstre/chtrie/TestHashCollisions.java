@@ -24,6 +24,36 @@ public class TestHashCollisions {
         removeChars (bt);
         removeInts (bt);
         
+        insertStrings (bt);
+        insertInts (bt);
+        insertBytes (bt);
+        insertChars (bt);
+        
+        removeStrings (bt);
+        removeChars (bt);
+        removeInts (bt);
+        removeBytes (bt);
+        
+        insertStrings (bt);
+        insertInts (bt);
+        insertBytes (bt);
+        insertChars (bt);
+        
+        removeChars (bt);
+        removeInts (bt);
+        removeBytes (bt);
+        removeStrings (bt);
+        
+        insertStrings (bt);
+        insertInts (bt);
+        insertBytes (bt);
+        insertChars (bt);
+        
+        removeInts (bt);
+        removeBytes (bt);
+        removeStrings (bt);
+        removeChars (bt);
+        
         System.out.println (bt);
     }
     
