@@ -172,7 +172,7 @@ public class BasicTrie {
 
             // Asked for a hash not in trie, let's insert it
             if (0L == (flagPos.flag & cn.bitmap)) {
-                final SNode snode = new SingletonSNode (new Entry (k, v));
+                final SNode snode = new SingletonSNode (k, v);
                 final CNode ncn = cn.inserted (flagPos, snode);
                 if (i.casMain (main, ncn)) {
                     return new Result (ResultType.FOUND, null);
@@ -192,7 +192,6 @@ public class BasicTrie {
                 // Found the hash locally, let's see if it matches
                 if (sn.hash () == hashcode) {
                     final SNode nsn = sn.put (k, v);
-                    // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     if (i.casMain (main, ncn)) {
                         return new Result (ResultType.FOUND, sn.get (k));
@@ -200,7 +199,7 @@ public class BasicTrie {
                         return new Result (ResultType.RESTART, null);
                     }
                 } else {
-                    final SNode nsn = new SingletonSNode (new Entry (k, v));
+                    final SNode nsn = new SingletonSNode (k, v);
                     // Creates a sub-level
                     final CNode scn = new CNode (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
@@ -488,15 +487,19 @@ public class BasicTrie {
      */
     static interface BranchNode {
     }
-    
+
     static interface SNode extends BranchNode {
         int hash ();
+
         Object get (Object k);
+
         SNode put (Object k, Object v);
+
         SNode remove (Object k);
+
         TNode tombed ();
     }
-    
+
     static interface TNode extends MainNode {
         SNode untombed ();
     }
@@ -558,7 +561,8 @@ public class BasicTrie {
          * 
          * @param flagPos
          *            a {@link FlagPos} instance
-         * @param snode a {@link SNode} instance           
+         * @param snode
+         *            a {@link SNode} instance
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode inserted (final FlagPos flagPos, final SNode snode) {
@@ -680,17 +684,26 @@ public class BasicTrie {
     static abstract class BaseSingletonNode {
         /**
          * Builds a {@link BaseSingletonNode} instance
-         * @param e
-         *            its {@link Entry} value
+         * 
+         * @param k
+         *            its {@link Object} key
+         * @param v
+         *            its {@link Object} value
          */
-        BaseSingletonNode (final Entry e) {
-            this.entry = e;
+        BaseSingletonNode (final Object k, final Object v) {
+            this.key = k;
+            this.value = v;
         }
 
         /**
-         * The object value
+         * The key object
          */
-        public final Entry entry;
+        public final Object key;
+
+        /**
+         * The value object
+         */
+        public final Object value;
     }
 
     /**
@@ -699,28 +712,31 @@ public class BasicTrie {
     static class SingletonSNode extends BaseSingletonNode implements SNode {
         /**
          * Builds a {@link SingletonSNode} instance
-         * @param e
-         *            its {@link Entry} value
+         * 
+         * @param k
+         *            its {@link Object} key
+         * @param v
+         *            its {@link Object} value
          */
-        SingletonSNode (final Entry e) {
-            super (e);
+        SingletonSNode (final Object k, final Object v) {
+            super (k, v);
         }
 
         public int hash () {
-            return BasicTrie.hash (this.entry.key.hashCode ());
+            return BasicTrie.hash (this.key.hashCode ());
         }
 
         /**
          * @return a copied {@link TNode} for this instance.
          */
         public TNode tombed () {
-            return new SingletonTNode (this.entry);
+            return new SingletonTNode (this.key, this.value);
         }
 
         @Override
         public Object get (Object k) {
-            if (this.entry.key.equals (k)) {
-                return this.entry.value;
+            if (this.key.equals (k)) {
+                return this.value;
             } else {
                 return null;
             }
@@ -728,7 +744,7 @@ public class BasicTrie {
 
         @Override
         public SNode put (Object k, Object v) {
-            return new SingletonSNode (new Entry (k, v));
+            return new SingletonSNode (k, v);
         }
 
         @Override
@@ -743,47 +759,22 @@ public class BasicTrie {
     static class SingletonTNode extends BaseSingletonNode implements TNode {
         /**
          * Builds a {@link SingletonTNode} instance
-         * @param e
-         *            its {@link Entry} value
+         * 
+        * @param k
+         *            its {@link Object} key
+         * @param v
+         *            its {@link Object} value
          */
-        SingletonTNode (final Entry e) {
-            super (e);
+        SingletonTNode (final Object k, final Object v) {
+            super (k, v);
         }
 
         /**
          * @return a copied {@link SNode} of this instance
          */
         public SNode untombed () {
-            return new SingletonSNode (this.entry);
+            return new SingletonSNode (this.key, this.value);
         }
-    }
-
-    /**
-     * {@link Entry} in the trie
-     */
-    static class Entry {
-        /**
-         * Builds an {@link Entry} from key-value mapping
-         * 
-         * @param key
-         *            the key {@link Object}
-         * @param value
-         *            the value {@link Object}
-         */
-        public Entry (Object key, Object value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        /**
-         * The object key
-         */
-        public final Object key;
-
-        /**
-         * The object value
-         */
-        public final Object value;
     }
 
     /**
