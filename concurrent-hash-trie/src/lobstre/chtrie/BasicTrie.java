@@ -245,21 +245,26 @@ public class BasicTrie {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
                 if (sn.hash () == hashcode) {
-                    final SNode nsn = sn.remove (k);
-                    if (null != nsn) {
-                        final CNode ncn = cn.updated (flagPos.position, nsn);
-                        if (i.casMain (main, ncn)) {
-                            return new Result (ResultType.FOUND, sn.get (k));
-                        } else {
-                            return new Result (ResultType.RESTART, null);
-                        }
+                    final Object previous = sn.get (k);
+                    if (null == previous) {
+                        res = new Result (ResultType.NOTFOUND, null);
                     } else {
-                        final CNode ncn = cn.removed (flagPos);
-                        final MainNode cntn = toContracted (ncn, level);
-                        if (i.casMain (cn, cntn)) {
-                            res = new Result (ResultType.FOUND, sn.get (k));
+                        final SNode nsn = sn.remove (k);
+                        if (null != nsn) {
+                            final CNode ncn = cn.updated (flagPos.position, nsn);
+                            if (i.casMain (main, ncn)) {
+                                return new Result (ResultType.FOUND, previous);
+                            } else {
+                                return new Result (ResultType.RESTART, null);
+                            }
                         } else {
-                            res = new Result (ResultType.RESTART, null);
+                            final CNode ncn = cn.removed (flagPos);
+                            final MainNode cntn = toContracted (ncn, level);
+                            if (i.casMain (cn, cntn)) {
+                                res = new Result (ResultType.FOUND, previous);
+                            } else {
+                                res = new Result (ResultType.RESTART, null);
+                            }
                         }
                     }
                 } else {
@@ -364,8 +369,8 @@ public class BasicTrie {
         // This function ensures that hashCodes that differ only by
         // constant multiples at each bit position have a bounded
         // number of collisions (approximately 8 at default load factor).
-        h ^= (h >>> 20) ^ (h >>> 12);
-        return h ^ (h >>> 7) ^ (h >>> 4);
+        h ^= h >>> 20 ^ h >>> 12;
+        return h ^ h >>> 7 ^ h >>> 4;
     }
 
     /**
@@ -770,7 +775,7 @@ public class BasicTrie {
         }
 
         @Override
-        public Object get (Object k) {
+        public Object get (final Object k) {
             if (this.key.equals (k)) {
                 return this.value;
             } else {
@@ -779,12 +784,20 @@ public class BasicTrie {
         }
 
         @Override
-        public SNode put (Object k, Object v) {
-            return new SingletonSNode (k, v);
+        public SNode put (final Object k, final Object v) {
+            if (this.key.equals (k)) {
+                return new SingletonSNode (k, v);
+            } else {
+                final KeyValueNode[] array = new KeyValueNode [] {
+                    new KeyValueNode (this.key, this.value), 
+                    new KeyValueNode (k, v),
+                };
+                return new MultiSNode (array);
+            }
         }
 
         @Override
-        public SNode remove (Object k) {
+        public SNode remove (final Object k) {
             return null;
         }
     }
@@ -810,6 +823,83 @@ public class BasicTrie {
          */
         public SNode untombed () {
             return new SingletonSNode (this.key, this.value);
+        }
+    }
+
+    static class BaseMultiNode {
+        protected final KeyValueNode[] content;
+
+        public BaseMultiNode (final KeyValueNode[] array) {
+            this.content = array;
+        }
+    }
+
+    static class MultiSNode extends BaseMultiNode implements SNode {
+        public MultiSNode (final KeyValueNode[] content) {
+            super (content);
+        }
+
+        @Override
+        public int hash () {
+            return BasicTrie.hash (this.content [0].key);
+        }
+
+        @Override
+        public Object get (final Object k) {
+            for (int i = 0; i < this.content.length; i++) {
+                final KeyValueNode n = this.content [i];
+                if (n.key.equals (k)) {
+                    return n.value;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public SNode put (final Object k, final Object v) {
+            final KeyValueNode[] array = new KeyValueNode[1 + this.content.length];
+            System.arraycopy (this.content, 0, array, 0, this.content.length);
+            array [this.content.length] = new KeyValueNode (k, v);
+            return new MultiSNode (array);
+        }
+
+        @Override
+        public SNode remove (final Object k) {
+            int index = -1;
+            for (int i = 0; i < this.content.length; i++) {
+                final KeyValueNode n = this.content [i];
+                if (n.key.equals (k)) {
+                    index = i;
+                }
+            }
+            
+            if (2 == this.content.length) {
+                KeyValueNode kvn = this.content[(index +1) %2];
+                return new SingletonSNode (kvn.key, kvn.value);
+            } else {
+                final KeyValueNode[] narr = new KeyValueNode[this.content.length - 1];
+                System.arraycopy (this.content, 0, narr, 0, index);
+                System.arraycopy (this.content, index + 1, narr, index, this.content.length - index - 1);
+                return new MultiSNode (narr);
+            }
+        }
+
+        @Override
+        public TNode tombed () {
+            return new MultiTNode (this.content);
+        }
+
+    }
+    
+    static class MultiTNode extends BaseMultiNode implements TNode {
+
+        public MultiTNode (KeyValueNode[] array) {
+            super (array);
+        }
+
+        @Override
+        public SNode untombed () {
+            return new MultiSNode (this.content);
         }
     }
 

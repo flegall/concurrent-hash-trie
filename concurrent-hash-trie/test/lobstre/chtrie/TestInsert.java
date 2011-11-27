@@ -9,7 +9,7 @@ public class TestInsert {
         TestHelper.assertEquals (null, bt.insert ("d", "b"));
         TestHelper.assertEquals (null, bt.insert ("e", "b"));
 
-        for (int i = 128; i < 10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i)));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (Integer.valueOf (i), lookup);

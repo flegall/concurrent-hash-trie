@@ -24,4 +24,16 @@ public class TestHelper {
         }
     }
 
+    public static void assertTrue (boolean found) {
+        if (!found) {
+            new Exception ("Error : expected: true, found: " + found).printStackTrace ();
+        }
+    }
+
+    public static void assertFalse (boolean found) {
+        if (found) {
+            new Exception ("Error : expected: false, found: " + found).printStackTrace ();
+        }
+    }
+
 }
