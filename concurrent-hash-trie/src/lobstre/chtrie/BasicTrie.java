@@ -141,7 +141,7 @@ public class BasicTrie {
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
-                if (sn.hashcode == hashcode) {
+                if (sn.hash () == hashcode) {
                     return new Result (ResultType.FOUND, sn.entry.value);
                 } else {
                     return new Result (ResultType.NOTFOUND, null);
@@ -167,7 +167,7 @@ public class BasicTrie {
 
             // Asked for a hash not in trie, let's insert it
             if (0L == (flagPos.flag & cn.bitmap)) {
-                final SNode snode = new SNode (hashcode, new Entry (k, v));
+                final SNode snode = new SNode (new Entry (k, v));
                 final CNode ncn = cn.inserted (flagPos, snode);
                 if (i.casMain (main, ncn)) {
                     return new Result (ResultType.FOUND, null);
@@ -184,9 +184,9 @@ public class BasicTrie {
             }
             if (an instanceof SNode) {
                 final SNode sn = (SNode) an;
-                final SNode nsn = new SNode (hashcode, new Entry (k, v));
+                final SNode nsn = new SNode (new Entry (k, v));
                 // Found the hash locally, let's see if it matches
-                if (sn.hashcode == hashcode) {
+                if (sn.hash () == hashcode) {
                     // Updates the key with the new value
                     final CNode ncn = cn.updated (flagPos.position, nsn);
                     if (i.casMain (main, ncn)) {
@@ -239,7 +239,7 @@ public class BasicTrie {
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
                 final SNode sn = (SNode) an;
-                if (sn.hashcode == hashcode) {
+                if (sn.hash () == hashcode) {
                     final CNode ncn = cn.removed (flagPos);
                     final MainNode cntn = toContracted (ncn, level);
                     if (i.casMain (cn, cntn)) {
@@ -595,7 +595,7 @@ public class BasicTrie {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode sNode, final int width) {
-            final long flag = BasicTrie.flag (sNode.hashcode, 0, width);
+            final long flag = BasicTrie.flag (sNode.hash (), 0, width);
             this.array = new BranchNode[] { sNode };
             this.bitmap = flag;
         }
@@ -613,8 +613,8 @@ public class BasicTrie {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode sn1, final SNode sn2, final int level, final int width) {
-            final long flag1 = BasicTrie.flag (sn1.hashcode, level, width);
-            final long flag2 = BasicTrie.flag (sn2.hashcode, level, width);
+            final long flag1 = BasicTrie.flag (sn1.hash (), level, width);
+            final long flag2 = BasicTrie.flag (sn2.hash (), level, width);
             if (flag1 < flag2) {
                 this.array = new BranchNode[] { sn1, sn2 };
             } else {
@@ -651,21 +651,12 @@ public class BasicTrie {
     static abstract class BaseSNode {
         /**
          * Builds a {@link SNode} instance
-         * 
-         * @param hashcode
-         *            its hash code value
          * @param e
          *            its {@link Entry} value
          */
-        BaseSNode (final int hashcode, final Entry e) {
-            this.hashcode = hashcode;
+        BaseSNode (final Entry e) {
             this.entry = e;
         }
-
-        /**
-         * The object key
-         */
-        public final int hashcode;
 
         /**
          * The object value
@@ -679,21 +670,22 @@ public class BasicTrie {
     static class SNode extends BaseSNode implements BranchNode {
         /**
          * Builds a {@link SNode} instance
-         * 
-         * @param hashcode
-         *            its hash code value
          * @param e
          *            its {@link Entry} value
          */
-        SNode (final int hashcode, final Entry e) {
-            super (hashcode, e);
+        SNode (final Entry e) {
+            super (e);
+        }
+
+        public int hash () {
+            return BasicTrie.hash (this.entry.key.hashCode ());
         }
 
         /**
          * @return a copied {@link TNode} for this instance.
          */
         public TNode tombed () {
-            return new TNode (this.hashcode, this.entry);
+            return new TNode (this.entry);
         }
     }
 
@@ -703,21 +695,18 @@ public class BasicTrie {
     static class TNode extends BaseSNode implements MainNode {
         /**
          * Builds a {@link TNode} instance
-         * 
-         * @param hashcode
-         *            its hash code value
          * @param e
          *            its {@link Entry} value
          */
-        TNode (final int hashcode, final Entry e) {
-            super (hashcode, e);
+        TNode (final Entry e) {
+            super (e);
         }
 
         /**
          * @return a copied {@link SNode} of this instance
          */
         public SNode untombed () {
-            return new SNode (this.hashcode, this.entry);
+            return new SNode (this.entry);
         }
     }
 
