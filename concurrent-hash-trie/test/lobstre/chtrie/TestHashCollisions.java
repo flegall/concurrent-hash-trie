@@ -33,20 +33,33 @@ public class TestHashCollisions {
         TestHelper.assertEquals (null, bt.insert ('c', 'c'));
         TestHelper.assertEquals (null, bt.insert ('d', 'd'));
         TestHelper.assertEquals (null, bt.insert ('e', 'e'));
+        
+        TestHelper.assertEquals ('a', bt.insert ('a', 'a'));
+        TestHelper.assertEquals ('b', bt.insert ('b', 'b'));
+        TestHelper.assertEquals ('c', bt.insert ('c', 'c'));
+        TestHelper.assertEquals ('d', bt.insert ('d', 'd'));
+        TestHelper.assertEquals ('e', bt.insert ('e', 'e'));
     }
 
     private static void insertStrings (final BasicTrie bt) {
         TestHelper.assertEquals (null, bt.insert ("a", "a"));
         TestHelper.assertEquals (null, bt.insert ("b", "b"));
-        TestHelper.assertEquals (null, bt.insert ("c", "b"));
-        TestHelper.assertEquals (null, bt.insert ("d", "b"));
-        TestHelper.assertEquals (null, bt.insert ("e", "b"));
+        TestHelper.assertEquals (null, bt.insert ("c", "c"));
+        TestHelper.assertEquals (null, bt.insert ("d", "d"));
+        TestHelper.assertEquals (null, bt.insert ("e", "e"));
+        
+        TestHelper.assertEquals ("a", bt.insert ("a", "a"));
+        TestHelper.assertEquals ("b", bt.insert ("b", "b"));
+        TestHelper.assertEquals ("c", bt.insert ("c", "c"));
+        TestHelper.assertEquals ("d", bt.insert ("d", "d"));
+        TestHelper.assertEquals ("e", bt.insert ("e", "e"));
     }
 
     private static void insertBytes (final BasicTrie bt) {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
             TestHelper.assertEquals (null, bt.insert (bigB, bigB));
+            TestHelper.assertEquals (bigB, bt.insert (bigB, bigB));
         }
     }
 
@@ -54,6 +67,7 @@ public class TestHashCollisions {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
             TestHelper.assertEquals (null, bt.insert (bigI, bigI));
+            TestHelper.assertEquals (bigI, bt.insert (bigI, bigI));
         }
     }
 

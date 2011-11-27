@@ -253,9 +253,9 @@ public class BasicTrie {
                         if (null != nsn) {
                             final CNode ncn = cn.updated (flagPos.position, nsn);
                             if (i.casMain (main, ncn)) {
-                                return new Result (ResultType.FOUND, previous);
+                                res = new Result (ResultType.FOUND, previous);
                             } else {
-                                return new Result (ResultType.RESTART, null);
+                                res = new Result (ResultType.RESTART, null);
                             }
                         } else {
                             final CNode ncn = cn.removed (flagPos);
@@ -788,10 +788,7 @@ public class BasicTrie {
             if (this.key.equals (k)) {
                 return new SingletonSNode (k, v);
             } else {
-                final KeyValueNode[] array = new KeyValueNode [] {
-                    new KeyValueNode (this.key, this.value), 
-                    new KeyValueNode (k, v),
-                };
+                final KeyValueNode[] array = new KeyValueNode[] { new KeyValueNode (this.key, this.value), new KeyValueNode (k, v), };
                 return new MultiSNode (array);
             }
         }
@@ -826,15 +823,33 @@ public class BasicTrie {
         }
     }
 
+    /**
+     * Base class for multiple SNode & TNode implementations
+     */
     static class BaseMultiNode {
-        protected final KeyValueNode[] content;
-
+        /**
+         * Builds a {@link BaseMultiNode} instance
+         * 
+         * @param array
+         *            a {@link KeyValueNode} instance
+         */
         public BaseMultiNode (final KeyValueNode[] array) {
             this.content = array;
         }
+
+        protected final KeyValueNode[] content;
     }
 
+    /**
+     * A Multiple key/values SNode
+     */
     static class MultiSNode extends BaseMultiNode implements SNode {
+        /**
+         * Builds a {@link MultiSNode} instance
+         * 
+         * @param content
+         *            a {@link KeyValueNode} content array
+         */
         public MultiSNode (final KeyValueNode[] content) {
             super (content);
         }
@@ -857,9 +872,27 @@ public class BasicTrie {
 
         @Override
         public SNode put (final Object k, final Object v) {
-            final KeyValueNode[] array = new KeyValueNode[1 + this.content.length];
+            int index = -1;
+            for (int i = 0; i < this.content.length; i++) {
+                final KeyValueNode n = this.content [i];
+                if (n.key.equals (k)) {
+                    index = i;
+                }
+            }
+
+            final KeyValueNode[] array;
+            if (index >= 0) {
+                array = new KeyValueNode[this.content.length];
+            } else {
+                array = new KeyValueNode[1 + this.content.length];
+            }
             System.arraycopy (this.content, 0, array, 0, this.content.length);
-            array [this.content.length] = new KeyValueNode (k, v);
+            if (index >= 0) {
+                array [index] = new KeyValueNode (k, v);
+            } else {
+                array [this.content.length] = new KeyValueNode (k, v);
+            }
+
             return new MultiSNode (array);
         }
 
@@ -872,9 +905,9 @@ public class BasicTrie {
                     index = i;
                 }
             }
-            
+
             if (2 == this.content.length) {
-                KeyValueNode kvn = this.content[(index +1) %2];
+                KeyValueNode kvn = this.content [(index + 1) % 2];
                 return new SingletonSNode (kvn.key, kvn.value);
             } else {
                 final KeyValueNode[] narr = new KeyValueNode[this.content.length - 1];
@@ -890,9 +923,18 @@ public class BasicTrie {
         }
 
     }
-    
+
+    /**
+     * A Multiple values {@link TNode} implementation
+     */
     static class MultiTNode extends BaseMultiNode implements TNode {
 
+        /**
+         * Builds a {@link MultiTNode} instance
+         * 
+         * @param array
+         *            a {@link KeyValueNode} array
+         */
         public MultiTNode (KeyValueNode[] array) {
             super (array);
         }
