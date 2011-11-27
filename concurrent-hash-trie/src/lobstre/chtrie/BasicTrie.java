@@ -57,8 +57,9 @@ public class BasicTrie {
      * @return the previous value associated to key
      */
     public Object insert (final Object key, final Object value) {
+        final int hc = hash (key);
         while (true) {
-            final Result res = iinsert (this.root, hash (key), key, value, 0, null);
+            final Result res = iinsert (this.root, hc, key, value, 0, null);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -80,9 +81,10 @@ public class BasicTrie {
      * @return the value associated to k
      */
     public Object lookup (final Object key) {
+        final int hc = hash (key);
         while (true) {
             // Getting lookup result
-            final Result res = ilookup (this.root, hash (key), key, 0, null);
+            final Result res = ilookup (this.root, hc, key, 0, null);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -104,9 +106,10 @@ public class BasicTrie {
      * @return true if removed was performed, false otherwises
      */
     public boolean remove (final Object key) {
+        final int hc = hash (key);
         while (true) {
             // Getting remove result
-            final Result res = iremove (this.root, hash (key), key, 0, null);
+            final Result res = iremove (this.root, hc, key, 0, null);
             switch (res.type) {
             case FOUND:
                 return true;
@@ -773,7 +776,7 @@ public class BasicTrie {
 
         @Override
         public int hash () {
-            return BasicTrie.hash (this.key.hashCode ());
+            return BasicTrie.hash (this.key);
         }
 
         @Override
