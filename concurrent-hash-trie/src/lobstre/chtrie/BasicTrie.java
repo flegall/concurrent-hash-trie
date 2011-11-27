@@ -488,15 +488,52 @@ public class BasicTrie {
     static interface BranchNode {
     }
 
+    /**
+     * A single node in the trie, why may contain several objects who share the
+     * same hashcode.
+     */
     static interface SNode extends BranchNode {
+        /**
+         * Get the hashcode
+         * 
+         * @return the hashcode
+         */
         int hash ();
 
+        /**
+         * Gets an Object associated with the given key
+         * 
+         * @param k
+         *            a key {@link Object}
+         * @return its associated value
+         */
         Object get (Object k);
 
+        /**
+         * Sets a mapping and returns a modified {@link SNode} copy
+         * 
+         * @param k
+         *            the key {@link Object}
+         * @param v
+         *            the value {@link Object}
+         * @return the copy of this {@link SNode} with the updated mapping
+         */
         SNode put (Object k, Object v);
 
+        /**
+         * Removes a mapping and returns a modified {@link SNode} copy
+         * 
+         * @param k
+         *            the key {@link Object}
+         * @param v
+         *            the value {@link Object}
+         * @return the copy of this {@link SNode} with the updated removal
+         */
         SNode remove (Object k);
 
+        /**
+         * @return a copied {@link TNode} for this instance.
+         */
         TNode tombed ();
     }
 
@@ -681,16 +718,16 @@ public class BasicTrie {
         public final long bitmap;
     }
 
-    static abstract class BaseSingletonNode {
+    static class KeyValueNode {
         /**
-         * Builds a {@link BaseSingletonNode} instance
+         * Builds a {@link KeyValueNode} instance
          * 
          * @param k
          *            its {@link Object} key
          * @param v
          *            its {@link Object} value
          */
-        BaseSingletonNode (final Object k, final Object v) {
+        KeyValueNode (final Object k, final Object v) {
             this.key = k;
             this.value = v;
         }
@@ -709,7 +746,7 @@ public class BasicTrie {
     /**
      * A Single Node class, holds a key, a value & a tomb flag.
      */
-    static class SingletonSNode extends BaseSingletonNode implements SNode {
+    static class SingletonSNode extends KeyValueNode implements SNode {
         /**
          * Builds a {@link SingletonSNode} instance
          * 
@@ -722,13 +759,12 @@ public class BasicTrie {
             super (k, v);
         }
 
+        @Override
         public int hash () {
             return BasicTrie.hash (this.key.hashCode ());
         }
 
-        /**
-         * @return a copied {@link TNode} for this instance.
-         */
+        @Override
         public TNode tombed () {
             return new SingletonTNode (this.key, this.value);
         }
@@ -756,11 +792,11 @@ public class BasicTrie {
     /**
      * A Tombed node instance
      */
-    static class SingletonTNode extends BaseSingletonNode implements TNode {
+    static class SingletonTNode extends KeyValueNode implements TNode {
         /**
          * Builds a {@link SingletonTNode} instance
          * 
-        * @param k
+         * @param k
          *            its {@link Object} key
          * @param v
          *            its {@link Object} value
