@@ -1,5 +1,6 @@
 package lobstre.chtrie;
 
+import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class BasicTrie {
@@ -249,7 +250,7 @@ public class BasicTrie {
                     if (null == previous) {
                         res = new Result (ResultType.NOTFOUND, null);
                     } else {
-                        final SNode nsn = sn.remove (k);
+                        final SNode nsn = sn.removed (k);
                         final MainNode replacement;
                         if (null != nsn) {
                             replacement = cn.updated (flagPos.position, nsn);
@@ -370,19 +371,21 @@ public class BasicTrie {
     }
 
     /**
-     * Returns a copy an {@link BranchNode} array with an updated
-     * {@link BranchNode} value at a certain position.
+     * Returns a copy an array with an updated value at a certain position.
      * 
+     * @param clazz
+     *            the Array's {@link Class}
      * @param array
-     *            the source {@link BranchNode} array
+     *            the source array
      * @param position
      *            the position
      * @param n
-     *            the updated {@link BranchNode} value
-     * @return an updated copy of the source {@link BranchNode} array
+     *            the updated value
+     * @return an updated copy of the source array
      */
-    static BranchNode[] updated (final BranchNode[] array, final int position, final BranchNode n) {
-        final BranchNode[] narr = new BranchNode[array.length];
+    static <T> T[] updated (final Class<T> clazz, final T[] array, final int position, final T n) {
+        @SuppressWarnings("unchecked")
+        final T[] narr = (T[]) Array.newInstance (clazz, array.length);
         System.arraycopy (array, 0, narr, 0, array.length);
         narr [position] = n;
         return narr;
@@ -392,6 +395,8 @@ public class BasicTrie {
      * Returns a copy an {@link BranchNode} array with an inserted
      * {@link BranchNode} value at a certain position.
      * 
+     * @param clazz
+     *            the Array's {@link Class}
      * @param array
      *            the source {@link BranchNode} array
      * @param position
@@ -400,8 +405,9 @@ public class BasicTrie {
      *            the inserted {@link BranchNode} value
      * @return an updated copy of the source {@link BranchNode} array
      */
-    static BranchNode[] inserted (final BranchNode[] array, final int position, final BranchNode n) {
-        final BranchNode[] narr = new BranchNode[array.length + 1];
+    static <T> T[] inserted (final Class<T> clazz, final T[] array, final int position, final T n) {
+        @SuppressWarnings("unchecked")
+        final T[] narr = (T[]) Array.newInstance (clazz, array.length + 1);
         System.arraycopy (array, 0, narr, 0, position);
         System.arraycopy (array, position, narr, position + 1, array.length - position);
         narr [position] = n;
@@ -409,17 +415,19 @@ public class BasicTrie {
     }
 
     /**
-     * Returns a copy an {@link BranchNode} array with a removed
-     * {@link BranchNode} value at a certain position.
+     * Returns a copy of an array with a removed value at a certain position.
      * 
+     * @param clazz
+     *            the Array's {@link Class}
      * @param array
-     *            the source {@link BranchNode} array
+     *            the source array
      * @param position
      *            the position
-     * @return an updated copy of the source {@link BranchNode} array
+     * @return an updated copy of the source array
      */
-    static BranchNode[] removed (final BranchNode[] array, final int position) {
-        final BranchNode[] narr = new BranchNode[array.length - 1];
+    static <T> T[] removed (final Class<T> clazz, final T[] array, final int position) {
+        @SuppressWarnings("unchecked")
+        final T[] narr = (T[]) Array.newInstance (clazz, array.length - 1);
         System.arraycopy (array, 0, narr, 0, position);
         System.arraycopy (array, position + 1, narr, position, array.length - position - 1);
         return narr;
@@ -533,7 +541,7 @@ public class BasicTrie {
          *            the value {@link Object}
          * @return the copy of this {@link SNode} with the updated removal
          */
-        SNode remove (Object k);
+        SNode removed (Object k);
 
         /**
          * @return a copied {@link TNode} for this instance.
@@ -607,7 +615,7 @@ public class BasicTrie {
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode inserted (final FlagPos flagPos, final SNode snode) {
-            final BranchNode[] narr = BasicTrie.inserted (this.array, flagPos.position, snode);
+            final BranchNode[] narr = BasicTrie.inserted (BranchNode.class, this.array, flagPos.position, snode);
             return new CNode (narr, flagPos.flag | this.bitmap);
         }
 
@@ -623,7 +631,7 @@ public class BasicTrie {
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode updated (final int position, final BranchNode bn) {
-            final BranchNode[] narr = BasicTrie.updated (this.array, position, bn);
+            final BranchNode[] narr = BasicTrie.updated (BranchNode.class, this.array, position, bn);
             return new CNode (narr, this.bitmap);
         }
 
@@ -637,7 +645,7 @@ public class BasicTrie {
          *         designated by flag & a position has been removed.
          */
         public CNode removed (final FlagPos flagPos) {
-            final BranchNode[] narr = BasicTrie.removed (this.array, flagPos.position);
+            final BranchNode[] narr = BasicTrie.removed (BranchNode.class, this.array, flagPos.position);
             return new CNode (narr, this.bitmap - flagPos.flag);
         }
 
@@ -793,7 +801,7 @@ public class BasicTrie {
         }
 
         @Override
-        public SNode remove (final Object k) {
+        public SNode removed (final Object k) {
             return null;
         }
     }
@@ -876,44 +884,35 @@ public class BasicTrie {
                 final KeyValueNode n = this.content [i];
                 if (n.key.equals (k)) {
                     index = i;
+                    break;
                 }
             }
 
             final KeyValueNode[] array;
             if (index >= 0) {
-                array = new KeyValueNode[this.content.length];
+                array = BasicTrie.updated (KeyValueNode.class, this.content, index, new KeyValueNode (k, v));
             } else {
-                array = new KeyValueNode[1 + this.content.length];
-            }
-            System.arraycopy (this.content, 0, array, 0, this.content.length);
-            if (index >= 0) {
-                array [index] = new KeyValueNode (k, v);
-            } else {
-                array [this.content.length] = new KeyValueNode (k, v);
+                array = BasicTrie.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode (k, v));
             }
 
             return new MultiSNode (array);
         }
 
         @Override
-        public SNode remove (final Object k) {
-            int index = -1;
+        public SNode removed (final Object k) {
             for (int i = 0; i < this.content.length; i++) {
                 final KeyValueNode n = this.content [i];
                 if (n.key.equals (k)) {
-                    index = i;
+                    if (2 == this.content.length) {
+                        final KeyValueNode kvn = this.content [(i + 1) % 2];
+                        return new SingletonSNode (kvn.key, kvn.value);
+                    } else {
+                        final KeyValueNode[] narr = BasicTrie.removed (KeyValueNode.class, this.content, i);
+                        return new MultiSNode (narr);
+                    }
                 }
             }
-
-            if (2 == this.content.length) {
-                KeyValueNode kvn = this.content [(index + 1) % 2];
-                return new SingletonSNode (kvn.key, kvn.value);
-            } else {
-                final KeyValueNode[] narr = new KeyValueNode[this.content.length - 1];
-                System.arraycopy (this.content, 0, narr, 0, index);
-                System.arraycopy (this.content, index + 1, narr, index, this.content.length - index - 1);
-                return new MultiSNode (narr);
-            }
+            throw new RuntimeException ("Key not found:" + k);
         }
 
         @Override
@@ -934,7 +933,7 @@ public class BasicTrie {
          * @param array
          *            a {@link KeyValueNode} array
          */
-        public MultiTNode (KeyValueNode[] array) {
+        public MultiTNode (final KeyValueNode[] array) {
             super (array);
         }
 
