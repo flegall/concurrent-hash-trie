@@ -3,7 +3,7 @@ package lobstre.chtrie;
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class BasicTrie<K,V> {
+public class BasicTrie<K, V> {
     /**
      * Root node of the trie
      */
@@ -207,11 +207,11 @@ public class BasicTrie<K,V> {
                         return new Result<V> (ResultType.RESTART, null);
                     }
                 } else {
-                    final SNode<K ,V> nsn = new SingletonSNode<K ,V> (k, v);
+                    final SNode<K, V> nsn = new SingletonSNode<K, V> (k, v);
                     // Creates a sub-level
-                    final CNode<K ,V> scn = new CNode<K ,V> (sn, nsn, level + this.width, this.width);
+                    final CNode<K, V> scn = new CNode<K, V> (sn, nsn, level + this.width, this.width);
                     final INode nin = new INode (scn);
-                    final CNode<K ,V> ncn = cn.updated (flagPos.position, nin);
+                    final CNode<K, V> ncn = cn.updated (flagPos.position, nin);
                     if (i.casMain (main, ncn)) {
                         return new Result<V> (ResultType.FOUND, null);
                     } else {
@@ -328,11 +328,12 @@ public class BasicTrie<K,V> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void clean (final INode i, final int level) {
         final MainNode m = i.getMain ();
         if (m instanceof CNode) {
-            i.casMain (m, toCompressed ((CNode<K, V>) m, level));
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) m;
+            i.casMain (m, toCompressed (cn, level));
         }
     }
 
@@ -351,12 +352,13 @@ public class BasicTrie<K,V> {
         return toContracted (ncn, level);
     }
 
-    @SuppressWarnings("unchecked")
     private MainNode toContracted (final CNode<K, V> cn, final int level) {
         if (level > 0 && 1 == cn.array.length) {
             final BranchNode bn = cn.array [0];
             if (bn instanceof SNode) {
-                return ((SNode<K, V>) bn).tombed ();
+                @SuppressWarnings("unchecked")
+                final SNode<K, V> sn = (SNode<K, V>) bn;
+                return sn.tombed ();
             }
         }
         return cn;
@@ -892,7 +894,6 @@ public class BasicTrie<K,V> {
             return null;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public SNode<K, V> put (final K k, final V v) {
             int index = -1;
@@ -906,15 +907,18 @@ public class BasicTrie<K,V> {
 
             final KeyValueNode<K, V>[] array;
             if (index >= 0) {
-                array = BasicTrie.updated (KeyValueNode.class, this.content, index, new KeyValueNode<K, V> (k, v));
+                @SuppressWarnings("unchecked")
+                final KeyValueNode<K, V>[] ar = BasicTrie.updated (KeyValueNode.class, this.content, index, new KeyValueNode<K, V> (k, v));
+                array = ar;
             } else {
-                array = BasicTrie.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode<K, V> (k, v));
+                @SuppressWarnings("unchecked")
+                final KeyValueNode<K, V>[] ar = BasicTrie.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode<K, V> (k, v));
+                array = ar;
             }
 
             return new MultiSNode<K, V> (array);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public SNode<K, V> removed (final Object k) {
             for (int i = 0; i < this.content.length; i++) {
@@ -924,8 +928,8 @@ public class BasicTrie<K,V> {
                         final KeyValueNode<K, V> kvn = this.content [(i + 1) % 2];
                         return new SingletonSNode<K, V> (kvn.key, kvn.value);
                     } else {
-                        @SuppressWarnings("rawtypes")
-                        final KeyValueNode[] narr = BasicTrie.removed (KeyValueNode.class, this.content, i);
+                        @SuppressWarnings("unchecked")
+                        final KeyValueNode<K, V>[] narr = BasicTrie.removed (KeyValueNode.class, this.content, i);
                         return new MultiSNode<K, V> (narr);
                     }
                 }
