@@ -2,6 +2,9 @@ package lobstre.chtrie;
 
 import java.lang.reflect.Array;
 import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -15,6 +18,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      * Width in bits
      */
     private final byte width;
+    
+    /**
+     * EntrySet
+     */
+    private final EntrySet entrySet = new EntrySet ();
 
     /**
      * Builds a {@link ConcurrentHashTrieMap} instance
@@ -100,8 +108,43 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
     }
 
     @Override
-    public Set<java.util.Map.Entry<K, V>> entrySet () {
-        throw new UnsupportedOperationException ();
+    public Set<Map.Entry<K, V>> entrySet () {
+        return entrySet;
+    }
+
+    private final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        public Iterator<Map.Entry<K, V>> iterator () {
+            throw new UnsupportedOperationException ();
+        }
+
+        public boolean contains (final Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            final Map.Entry<K, V> e = (Map.Entry<K, V>) o;
+            final K k = e.getKey ();
+            final V v = lookup (k);
+            return v != null;
+        }
+
+        public boolean remove (final Object o) {
+            if (!(o instanceof Map.Entry)) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            final Map.Entry<K, V> e = (Map.Entry<K, V>) o;
+            final K k = e.getKey ();
+            return null != delete (k);
+        }
+
+        public int size () {
+            throw new UnsupportedOperationException ();
+        }
+
+        public void clear () {
+            ConcurrentHashTrieMap.this.clear ();
+        }
     }
 
     /**
@@ -114,6 +157,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      * @return the previous value associated to key
      */
     V insert (final K key, final V value) {
+        notNullKey (key);
+        notNullValue (value);
         final int hc = hash (key);
         while (true) {
             final Result<V> res = iinsert (this.root, hc, key, value, 0, null);
@@ -138,6 +183,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      * @return the value associated to k
      */
     V lookup (final K key) {
+        notNullKey (key);
         final int hc = hash (key);
         while (true) {
             // Getting lookup result
@@ -163,6 +209,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      * @return the removed value if removed was performed, null otherwise
      */
     V delete (final K key) {
+        notNullKey (key);
         final int hc = hash (key);
         while (true) {
             // Getting remove result
@@ -432,6 +479,18 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             }
         }
         return null;
+    }
+
+    private void notNullValue (final V value) {
+        if (value == null) {
+            throw new NullPointerException ("The value must be non-null");
+        }
+    }
+
+    private void notNullKey (final K key) {
+        if (key == null) {
+            throw new NullPointerException ("The key must be non-null");
+        }
     }
 
     static int hash (final Object key) {
