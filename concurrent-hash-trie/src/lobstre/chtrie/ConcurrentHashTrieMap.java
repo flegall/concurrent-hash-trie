@@ -105,11 +105,11 @@ public class ConcurrentHashTrieMap<K, V> {
      *            the key Object
      * @return true if removed was performed, false otherwises
      */
-    public boolean remove (final K key) {
+    public boolean delete (final K key) {
         final int hc = hash (key);
         while (true) {
             // Getting remove result
-            final Result<V> res = iremove (this.root, hc, key, 0, null);
+            final Result<V> res = idelete (this.root, hc, key, 0, null);
             switch (res.type) {
             case FOUND:
                 return true;
@@ -229,7 +229,7 @@ public class ConcurrentHashTrieMap<K, V> {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<V> iremove (final INode i, final int hashcode, final K k, final int level, final INode parent) {
+    private Result<V> idelete (final INode i, final int hashcode, final K k, final int level, final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -248,7 +248,7 @@ public class ConcurrentHashTrieMap<K, V> {
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                res = iremove (sin, hashcode, k, level + this.width, i);
+                res = idelete (sin, hashcode, k, level + this.width, i);
             }
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches

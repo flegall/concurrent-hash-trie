@@ -108,17 +108,17 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null != bt.lookup ('d'));
         TestHelper.assertTrue (null != bt.lookup ('e'));
         
-        TestHelper.assertTrue (bt.remove ('a'));
-        TestHelper.assertTrue (bt.remove ('b'));
-        TestHelper.assertTrue (bt.remove ('c'));
-        TestHelper.assertTrue (bt.remove ('d'));
-        TestHelper.assertTrue (bt.remove ('e'));
+        TestHelper.assertTrue (bt.delete ('a'));
+        TestHelper.assertTrue (bt.delete ('b'));
+        TestHelper.assertTrue (bt.delete ('c'));
+        TestHelper.assertTrue (bt.delete ('d'));
+        TestHelper.assertTrue (bt.delete ('e'));
         
-        TestHelper.assertFalse (bt.remove ('a'));
-        TestHelper.assertFalse (bt.remove ('b'));
-        TestHelper.assertFalse (bt.remove ('c'));
-        TestHelper.assertFalse (bt.remove ('d'));
-        TestHelper.assertFalse (bt.remove ('e'));
+        TestHelper.assertFalse (bt.delete ('a'));
+        TestHelper.assertFalse (bt.delete ('b'));
+        TestHelper.assertFalse (bt.delete ('c'));
+        TestHelper.assertFalse (bt.delete ('d'));
+        TestHelper.assertFalse (bt.delete ('e'));
         
         TestHelper.assertTrue (null == bt.lookup ('a'));
         TestHelper.assertTrue (null == bt.lookup ('b'));
@@ -134,17 +134,17 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null != bt.lookup ("d"));
         TestHelper.assertTrue (null != bt.lookup ("e"));
         
-        TestHelper.assertTrue (bt.remove ("a"));
-        TestHelper.assertTrue (bt.remove ("b"));
-        TestHelper.assertTrue (bt.remove ("c"));
-        TestHelper.assertTrue (bt.remove ("d"));
-        TestHelper.assertTrue (bt.remove ("e"));
+        TestHelper.assertTrue (bt.delete ("a"));
+        TestHelper.assertTrue (bt.delete ("b"));
+        TestHelper.assertTrue (bt.delete ("c"));
+        TestHelper.assertTrue (bt.delete ("d"));
+        TestHelper.assertTrue (bt.delete ("e"));
         
-        TestHelper.assertFalse (bt.remove ("a"));
-        TestHelper.assertFalse (bt.remove ("b"));
-        TestHelper.assertFalse (bt.remove ("c"));
-        TestHelper.assertFalse (bt.remove ("d"));
-        TestHelper.assertFalse (bt.remove ("e"));
+        TestHelper.assertFalse (bt.delete ("a"));
+        TestHelper.assertFalse (bt.delete ("b"));
+        TestHelper.assertFalse (bt.delete ("c"));
+        TestHelper.assertFalse (bt.delete ("d"));
+        TestHelper.assertFalse (bt.delete ("e"));
         
         TestHelper.assertTrue (null == bt.lookup ("a"));
         TestHelper.assertTrue (null == bt.lookup ("b"));
@@ -157,8 +157,8 @@ public class TestHashCollisions {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup(bigI));
-            TestHelper.assertTrue (bt.remove (bigI));
-            TestHelper.assertFalse (bt.remove (bigI));
+            TestHelper.assertTrue (bt.delete (bigI));
+            TestHelper.assertFalse (bt.delete (bigI));
             TestHelper.assertTrue (null == bt.lookup(bigI));
         }
     }
@@ -167,8 +167,8 @@ public class TestHashCollisions {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup(bigB));
-            TestHelper.assertTrue (bt.remove (bigB));
-            TestHelper.assertFalse (bt.remove (bigB));
+            TestHelper.assertTrue (bt.delete (bigB));
+            TestHelper.assertFalse (bt.delete (bigB));
             TestHelper.assertTrue (null == bt.lookup(bigB));
         }
     }

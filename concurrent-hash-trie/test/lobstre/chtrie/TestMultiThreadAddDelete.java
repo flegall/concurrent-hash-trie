@@ -4,20 +4,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class TestMultiThreadAddRemoveSimpler {
+public class TestMultiThreadAddDelete {
     public static void main (final String[] args) {
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
+
+        for (int j = 500 * 1000; j < 1000 * 1000; j++) {
+            bt.insert (Integer.valueOf (j), Integer.valueOf (j));
+            bt.delete (Integer.valueOf (j));
+        }
+        
         int nThreads = 2;
         final ExecutorService es = Executors.newFixedThreadPool (nThreads);
-        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         for (int i = 0; i < nThreads; i++) {
-            final int threadNo = i;
             es.execute (new Runnable () {
                 @Override
                 public void run () {
-                    final int j = threadNo == 0 ? 0 : 64;
-                    for (int i = 0; i < 500 * 1000; i++) {
+                    for (int j = 0; j < 500 * 1000; j++) {
                         bt.insert (Integer.valueOf (j), Integer.valueOf (j));
-                        bt.remove (Integer.valueOf (j));
+                        bt.delete (Integer.valueOf (j));
                     }
                 }
             });

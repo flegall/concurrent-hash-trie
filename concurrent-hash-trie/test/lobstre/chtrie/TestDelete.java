@@ -1,6 +1,6 @@
 package lobstre.chtrie;
 
-public class TestRemove {
+public class TestDelete {
     public static void main (final String[] args) {
         final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
 
@@ -15,7 +15,7 @@ public class TestRemove {
         checkAddInsert (bt, 8437);
         
         for (int i = 0; i < 10000; i++) {
-            boolean removed = bt.remove (Integer.valueOf (i));
+            boolean removed = bt.delete (Integer.valueOf (i));
             TestHelper.assertEquals (Boolean.TRUE, Boolean.valueOf (removed));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (null, lookup);
@@ -26,7 +26,7 @@ public class TestRemove {
 
     private static void checkAddInsert (final ConcurrentHashTrieMap<Object, Object> bt, int k) {
         final Integer v = Integer.valueOf (k);
-        bt.remove (v);
+        bt.delete (v);
         Object foundV = bt.lookup (v);
         TestHelper.assertEquals (null, foundV);
         TestHelper.assertEquals (null, bt.insert (v, v));
