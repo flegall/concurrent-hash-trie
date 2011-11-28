@@ -1,9 +1,11 @@
 package lobstre.chtrie;
 
 import java.lang.reflect.Array;
+import java.util.AbstractMap;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class ConcurrentHashTrieMap<K, V> {
+public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
     /**
      * Root node of the trie
      */
@@ -47,6 +49,61 @@ public class ConcurrentHashTrieMap<K, V> {
         }
     }
 
+    @Override
+    public boolean isEmpty () {
+        final MainNode main = this.root.getMain ();
+        if (main instanceof CNode) {
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) main;
+            return cn.bitmap == 0L;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean containsKey (final Object key) {
+        @SuppressWarnings("unchecked")
+        final K k = (K) key;
+        return null != lookup (k);
+    }
+
+    @Override
+    public V get (final Object key) {
+        @SuppressWarnings("unchecked")
+        final K k = (K) key;
+        return lookup (k);
+    }
+
+    @Override
+    public V put (final K key, final V value) {
+        return insert (key, value);
+    }
+
+    @Override
+    public V remove (final Object key) {
+        @SuppressWarnings("unchecked")
+        final K k = (K) key;
+        return delete (k);
+    }
+
+    @Override
+    public void clear () {
+        final MainNode main = this.root.getMain ();
+        while (true) {
+            if (this.root.casMain (main, new CNode<K, V> ())) {
+                return;
+            } else {
+                continue;
+            }
+        }
+    }
+
+    @Override
+    public Set<java.util.Map.Entry<K, V>> entrySet () {
+        throw new UnsupportedOperationException ();
+    }
+
     /**
      * Inserts or updates a key/value mapping.
      * 
@@ -56,7 +113,7 @@ public class ConcurrentHashTrieMap<K, V> {
      *            a value Object
      * @return the previous value associated to key
      */
-    public V insert (final K key, final V value) {
+    V insert (final K key, final V value) {
         final int hc = hash (key);
         while (true) {
             final Result<V> res = iinsert (this.root, hc, key, value, 0, null);
@@ -80,7 +137,7 @@ public class ConcurrentHashTrieMap<K, V> {
      *            a key {@link Object}
      * @return the value associated to k
      */
-    public V lookup (final K key) {
+    V lookup (final K key) {
         final int hc = hash (key);
         while (true) {
             // Getting lookup result
@@ -105,7 +162,7 @@ public class ConcurrentHashTrieMap<K, V> {
      *            the key Object
      * @return the removed value if removed was performed, null otherwise
      */
-    public V delete (final K key) {
+    V delete (final K key) {
         final int hc = hash (key);
         while (true) {
             // Getting remove result
@@ -966,8 +1023,9 @@ public class ConcurrentHashTrieMap<K, V> {
     }
 
     /**
-     * The result of a {@link ConcurrentHashTrieMap#flagPos(int, int, long, int)} call.
-     * Contains a single bit flag & a position
+     * The result of a
+     * {@link ConcurrentHashTrieMap#flagPos(int, int, long, int)} call. Contains
+     * a single bit flag & a position
      */
     static class FlagPos {
         /**
