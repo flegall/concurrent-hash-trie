@@ -114,7 +114,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     private final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator () {
-            throw new UnsupportedOperationException ();
+            return newIterator ();
         }
 
         public boolean contains (final Object o) {
@@ -145,6 +145,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         public void clear () {
             ConcurrentHashTrieMap.this.clear ();
         }
+    }
+
+    private Iterator<java.util.Map.Entry<K, V>> newIterator () {
+        return null;
     }
 
     /**
