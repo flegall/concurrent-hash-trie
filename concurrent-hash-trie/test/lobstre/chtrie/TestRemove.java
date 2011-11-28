@@ -2,7 +2,7 @@ package lobstre.chtrie;
 
 public class TestRemove {
     public static void main (final String[] args) {
-        final BasicTrie<Object, Object> bt = new BasicTrie<Object, Object> ();
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
 
         for (int i = 0; i < 10000; i++) {
             TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i)));
@@ -24,7 +24,7 @@ public class TestRemove {
         bt.toString ();
     }
 
-    private static void checkAddInsert (final BasicTrie<Object, Object> bt, int k) {
+    private static void checkAddInsert (final ConcurrentHashTrieMap<Object, Object> bt, int k) {
         final Integer v = Integer.valueOf (k);
         bt.remove (v);
         Object foundV = bt.lookup (v);

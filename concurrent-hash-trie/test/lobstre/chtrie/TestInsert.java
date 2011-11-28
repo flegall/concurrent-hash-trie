@@ -2,7 +2,7 @@ package lobstre.chtrie;
 
 public class TestInsert {
     public static void main (final String[] args) {
-        final BasicTrie<Object, Object> bt = new BasicTrie<Object, Object> ();
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         TestHelper.assertEquals (null, bt.insert ("a", "a"));
         TestHelper.assertEquals (null, bt.insert ("b", "b"));
         TestHelper.assertEquals (null, bt.insert ("c", "b"));

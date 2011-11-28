@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestMultiThreadAddRemove {
     public static void main (final String[] args) {
-        final BasicTrie<Object, Object> bt = new BasicTrie<Object, Object> ();
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
 
         for (int j = 500 * 1000; j < 1000 * 1000; j++) {
             bt.insert (Integer.valueOf (j), Integer.valueOf (j));

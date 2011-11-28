@@ -3,7 +3,7 @@ package lobstre.chtrie;
 import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class BasicTrie<K, V> {
+public class ConcurrentHashTrieMap<K, V> {
     /**
      * Root node of the trie
      */
@@ -15,14 +15,14 @@ public class BasicTrie<K, V> {
     private final byte width;
 
     /**
-     * Builds a {@link BasicTrie} instance
+     * Builds a {@link ConcurrentHashTrieMap} instance
      */
-    public BasicTrie () {
+    public ConcurrentHashTrieMap () {
         this (6);
     }
 
     /**
-     * Builds a {@link BasicTrie} instance
+     * Builds a {@link ConcurrentHashTrieMap} instance
      * 
      * @param width
      *            the Trie width in power-of-two exponents. Values are expected
@@ -36,7 +36,7 @@ public class BasicTrie<K, V> {
      *            hence the trie is O(Log64(N)</li>
      *            </ul>
      */
-    public BasicTrie (final int width) {
+    public ConcurrentHashTrieMap (final int width) {
         this.root = new INode (new CNode<K, V> ());
         if (width > 6) {
             this.width = 6;
@@ -631,7 +631,7 @@ public class BasicTrie<K, V> {
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode<K, V> inserted (final FlagPos flagPos, final SNode<K, V> snode) {
-            final BranchNode[] narr = BasicTrie.inserted (BranchNode.class, this.array, flagPos.position, snode);
+            final BranchNode[] narr = ConcurrentHashTrieMap.inserted (BranchNode.class, this.array, flagPos.position, snode);
             return new CNode<K, V> (narr, flagPos.flag | this.bitmap);
         }
 
@@ -647,7 +647,7 @@ public class BasicTrie<K, V> {
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode<K, V> updated (final int position, final BranchNode bn) {
-            final BranchNode[] narr = BasicTrie.updated (BranchNode.class, this.array, position, bn);
+            final BranchNode[] narr = ConcurrentHashTrieMap.updated (BranchNode.class, this.array, position, bn);
             return new CNode<K, V> (narr, this.bitmap);
         }
 
@@ -661,7 +661,7 @@ public class BasicTrie<K, V> {
          *         designated by flag & a position has been removed.
          */
         public CNode<K, V> removed (final FlagPos flagPos) {
-            final BranchNode[] narr = BasicTrie.removed (BranchNode.class, this.array, flagPos.position);
+            final BranchNode[] narr = ConcurrentHashTrieMap.removed (BranchNode.class, this.array, flagPos.position);
             return new CNode<K, V> (narr, this.bitmap - flagPos.flag);
         }
 
@@ -693,7 +693,7 @@ public class BasicTrie<K, V> {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode<K, V> sNode, final int width) {
-            final long flag = BasicTrie.flag (sNode.hash (), 0, width);
+            final long flag = ConcurrentHashTrieMap.flag (sNode.hash (), 0, width);
             this.array = new BranchNode[] { sNode };
             this.bitmap = flag;
         }
@@ -711,8 +711,8 @@ public class BasicTrie<K, V> {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode<K, V> sn1, final SNode<K, V> sn2, final int level, final int width) {
-            final long flag1 = BasicTrie.flag (sn1.hash (), level, width);
-            final long flag2 = BasicTrie.flag (sn2.hash (), level, width);
+            final long flag1 = ConcurrentHashTrieMap.flag (sn1.hash (), level, width);
+            final long flag2 = ConcurrentHashTrieMap.flag (sn2.hash (), level, width);
             if (flag1 < flag2) {
                 this.array = new BranchNode[] { sn1, sn2 };
             } else {
@@ -789,7 +789,7 @@ public class BasicTrie<K, V> {
 
         @Override
         public int hash () {
-            return BasicTrie.hash (this.key);
+            return ConcurrentHashTrieMap.hash (this.key);
         }
 
         @Override
@@ -880,7 +880,7 @@ public class BasicTrie<K, V> {
 
         @Override
         public int hash () {
-            return BasicTrie.hash (this.content [0].key);
+            return ConcurrentHashTrieMap.hash (this.content [0].key);
         }
 
         @Override
@@ -908,11 +908,11 @@ public class BasicTrie<K, V> {
             final KeyValueNode<K, V>[] array;
             if (index >= 0) {
                 @SuppressWarnings("unchecked")
-                final KeyValueNode<K, V>[] ar = BasicTrie.updated (KeyValueNode.class, this.content, index, new KeyValueNode<K, V> (k, v));
+                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.updated (KeyValueNode.class, this.content, index, new KeyValueNode<K, V> (k, v));
                 array = ar;
             } else {
                 @SuppressWarnings("unchecked")
-                final KeyValueNode<K, V>[] ar = BasicTrie.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode<K, V> (k, v));
+                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode<K, V> (k, v));
                 array = ar;
             }
 
@@ -929,7 +929,7 @@ public class BasicTrie<K, V> {
                         return new SingletonSNode<K, V> (kvn.key, kvn.value);
                     } else {
                         @SuppressWarnings("unchecked")
-                        final KeyValueNode<K, V>[] narr = BasicTrie.removed (KeyValueNode.class, this.content, i);
+                        final KeyValueNode<K, V>[] narr = ConcurrentHashTrieMap.removed (KeyValueNode.class, this.content, i);
                         return new MultiSNode<K, V> (narr);
                     }
                 }
@@ -966,7 +966,7 @@ public class BasicTrie<K, V> {
     }
 
     /**
-     * The result of a {@link BasicTrie#flagPos(int, int, long, int)} call.
+     * The result of a {@link ConcurrentHashTrieMap#flagPos(int, int, long, int)} call.
      * Contains a single bit flag & a position
      */
     static class FlagPos {

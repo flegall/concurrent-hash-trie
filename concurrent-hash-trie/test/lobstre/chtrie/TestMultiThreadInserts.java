@@ -8,7 +8,7 @@ public class TestMultiThreadInserts {
     public static void main (final String[] args) {
         final int nThreads = 2;
         final ExecutorService es = Executors.newFixedThreadPool (nThreads);
-        final BasicTrie<Object, Object> bt = new BasicTrie<Object, Object> ();
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         for (int i = 0; i < nThreads; i++) {
             final int threadNo = i;
             es.execute (new Runnable () {

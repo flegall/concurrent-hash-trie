@@ -2,7 +2,7 @@ package lobstre.chtrie;
 
 public class TestHashCollisions {
     public static void main (final String[] args) {
-        final BasicTrie<Object, Object> bt = new BasicTrie<Object, Object> ();
+        final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         
         insertStrings (bt);
         insertChars (bt);
@@ -57,7 +57,7 @@ public class TestHashCollisions {
         System.out.println (bt);
     }
     
-    private static void insertChars (final BasicTrie<Object, Object> bt) {
+    private static void insertChars (final ConcurrentHashTrieMap<Object, Object> bt) {
         TestHelper.assertEquals (null, bt.insert ('a', 'a'));
         TestHelper.assertEquals (null, bt.insert ('b', 'b'));
         TestHelper.assertEquals (null, bt.insert ('c', 'c'));
@@ -71,7 +71,7 @@ public class TestHashCollisions {
         TestHelper.assertEquals ('e', bt.insert ('e', 'e'));
     }
 
-    private static void insertStrings (final BasicTrie<Object, Object> bt) {
+    private static void insertStrings (final ConcurrentHashTrieMap<Object, Object> bt) {
         TestHelper.assertEquals (null, bt.insert ("a", "a"));
         TestHelper.assertEquals (null, bt.insert ("b", "b"));
         TestHelper.assertEquals (null, bt.insert ("c", "c"));
@@ -85,7 +85,7 @@ public class TestHashCollisions {
         TestHelper.assertEquals ("e", bt.insert ("e", "e"));
     }
 
-    private static void insertBytes (final BasicTrie<Object, Object> bt) {
+    private static void insertBytes (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
             TestHelper.assertEquals (null, bt.insert (bigB, bigB));
@@ -93,7 +93,7 @@ public class TestHashCollisions {
         }
     }
 
-    private static void insertInts (final BasicTrie<Object, Object> bt) {
+    private static void insertInts (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
             TestHelper.assertEquals (null, bt.insert (bigI, bigI));
@@ -101,7 +101,7 @@ public class TestHashCollisions {
         }
     }
 
-    private static void removeChars (final BasicTrie<Object, Object> bt) {
+    private static void removeChars (final ConcurrentHashTrieMap<Object, Object> bt) {
         TestHelper.assertTrue (null != bt.lookup ('a'));
         TestHelper.assertTrue (null != bt.lookup ('b'));
         TestHelper.assertTrue (null != bt.lookup ('c'));
@@ -127,7 +127,7 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null == bt.lookup ('e'));
     }
 
-    private static void removeStrings (final BasicTrie<Object, Object> bt) {
+    private static void removeStrings (final ConcurrentHashTrieMap<Object, Object> bt) {
         TestHelper.assertTrue (null != bt.lookup ("a"));
         TestHelper.assertTrue (null != bt.lookup ("b"));
         TestHelper.assertTrue (null != bt.lookup ("c"));
@@ -153,7 +153,7 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null == bt.lookup ("e"));
     }
 
-    private static void removeInts (final BasicTrie<Object, Object> bt) {
+    private static void removeInts (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup(bigI));
@@ -163,7 +163,7 @@ public class TestHashCollisions {
         }
     }
 
-    private static void removeBytes (final BasicTrie<Object, Object> bt) {
+    private static void removeBytes (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup(bigB));
