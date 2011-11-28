@@ -103,18 +103,18 @@ public class ConcurrentHashTrieMap<K, V> {
      * 
      * @param key
      *            the key Object
-     * @return true if removed was performed, false otherwises
+     * @return the removed value if removed was performed, null otherwise
      */
-    public boolean delete (final K key) {
+    public V delete (final K key) {
         final int hc = hash (key);
         while (true) {
             // Getting remove result
             final Result<V> res = idelete (this.root, hc, key, 0, null);
             switch (res.type) {
             case FOUND:
-                return true;
+                return res.result;
             case NOTFOUND:
-                return false;
+                return null;
             case RESTART:
                 continue;
             default:

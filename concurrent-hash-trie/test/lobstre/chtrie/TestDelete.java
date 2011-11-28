@@ -15,7 +15,7 @@ public class TestDelete {
         checkAddInsert (bt, 8437);
         
         for (int i = 0; i < 10000; i++) {
-            boolean removed = bt.delete (Integer.valueOf (i));
+            boolean removed = null != bt.delete (Integer.valueOf (i));
             TestHelper.assertEquals (Boolean.TRUE, Boolean.valueOf (removed));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (null, lookup);
