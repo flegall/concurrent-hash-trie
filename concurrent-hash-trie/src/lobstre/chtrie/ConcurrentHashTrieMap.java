@@ -112,6 +112,51 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         return entrySet;
     }
 
+    private final class Iter implements Iterator<Map.Entry<K, V>> {
+        private KeyValueNode<K, V> current = null;
+        private KeyValueNode<K, V> next = null;
+        
+        public Iter () {
+            current = lookupNext (null);
+        }
+        
+        @Override
+        public boolean hasNext () {
+            return next != null;
+        }
+
+        @Override
+        public Entry<K, V> next () {
+            current = next;
+            next = lookupNext (current);
+            return new Entry<K, V>() {
+                private final K key = current.key;
+                private V value = current.value;
+                @Override
+                public K getKey () {
+                    return key;
+                }
+
+                @Override
+                public V getValue () {
+                    return value;
+                }
+
+                @Override
+                public V setValue (V v) {
+                    final V put = put (key, v);
+                    this.value = put;
+                    return this.value;
+                }
+            };
+        }
+
+        @Override
+        public void remove () {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     private final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator () {
             return newIterator ();
@@ -147,8 +192,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         }
     }
 
-    private Iterator<java.util.Map.Entry<K, V>> newIterator () {
-        return null;
+    private Iterator<Map.Entry<K, V>> newIterator () {
+        return new Iter ();
     }
 
     /**
@@ -227,6 +272,42 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 continue;
             default:
                 throw new RuntimeException ("Unexpected case: " + res.type);
+            }
+        }
+    }
+    
+    KeyValueNode<K, V> lookupNext (final KeyValueNode<K, V> kvn) {
+        if (kvn != null) {
+            notNullKey (kvn.key);
+            final int hc = hash (kvn.key);
+            while (true) {
+                // Getting lookup result
+                final Result<KeyValueNode<K, V>> res = ilookupNext (this.root, hc, kvn, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return res.result;
+                case NOTFOUND:
+                    return null;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
+            }
+        } else {
+            while (true) {
+                // Getting lookup result
+                final Result<KeyValueNode<K, V>> res = ilookupFirst (this.root, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return res.result;
+                case NOTFOUND:
+                    return null;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
             }
         }
     }
@@ -402,6 +483,88 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         if (main instanceof TNode) {
             clean (parent, level - this.width);
             return new Result<V> (ResultType.RESTART, null);
+        }
+        throw new RuntimeException ("Unexpected case: " + main);
+    }
+
+    private Result<KeyValueNode<K, V>> ilookupFirst (final INode i, final int level, final INode parent) {
+        final MainNode main = i.getMain ();
+
+        // Usual case
+        if (main instanceof CNode) {
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) main;
+            if (cn.bitmap == 0L) {
+                return new Result<KeyValueNode<K, V>> (ResultType.NOTFOUND, null);
+            }
+            final BranchNode an = cn.array [0];
+            if (an instanceof INode) {
+                // Looking down
+                final INode sin = (INode) an;
+                return ilookupFirst (sin, level + this.width, i);
+            }
+            if (an instanceof SNode) {
+                // Found the hash locally, let's see if it matches
+                @SuppressWarnings("unchecked")
+                final SNode<K, V> sn = (SNode<K, V>) an;
+                final KeyValueNode<K, V> v = sn.first ();
+                if (null != v) {
+                    return new Result<KeyValueNode<K, V>> (ResultType.FOUND, v);
+                } else {
+                    return new Result<KeyValueNode<K, V>> (ResultType.NOTFOUND, null);
+                }
+            }
+        }
+
+        // Cleaning up trie
+        if (main instanceof TNode) {
+            clean (parent, level - this.width);
+            return new Result<KeyValueNode<K, V>> (ResultType.RESTART, null);
+        }
+        throw new RuntimeException ("Unexpected case: " + main);
+    }
+
+    private Result<KeyValueNode<K, V>> ilookupNext (final INode i, final int hashcode, final KeyValueNode<K, V> kvn, final int level, final INode parent) {
+        final MainNode main = i.getMain ();
+
+        // Usual case
+        if (main instanceof CNode) {
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) main;
+            final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
+
+            // Asked for a hash not in trie
+            if (0L == (flagPos.flag & cn.bitmap)) {
+                return new Result<KeyValueNode<K, V>> (ResultType.NOTFOUND, null);
+            }
+
+            final BranchNode an = cn.array [flagPos.position];
+            if (an instanceof INode) {
+                // Looking down
+                final INode sin = (INode) an;
+                return ilookupNext (sin, hashcode, kvn, level + this.width, i);
+            }
+            if (an instanceof SNode) {
+                // Found the hash locally, let's see if it matches
+                @SuppressWarnings("unchecked")
+                final SNode<K, V> sn = (SNode<K, V>) an;
+                if (sn.hash () == hashcode) {
+                    final V v = sn.get (kvn.key);
+                    if (null != v) {
+                        return new Result<KeyValueNode<K, V>> (ResultType.FOUND, new KeyValueNode<K, V> (kvn.key, v));
+                    } else {
+                        return new Result<KeyValueNode<K, V>> (ResultType.NOTFOUND, null);
+                    }
+                } else {
+                    return new Result<KeyValueNode<K, V>> (ResultType.NOTFOUND, null);
+                }
+            }
+        }
+
+        // Cleaning up trie
+        if (main instanceof TNode) {
+            clean (parent, level - this.width);
+            return new Result<KeyValueNode<K, V>> (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Unexpected case: " + main);
     }
@@ -644,6 +807,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return the hashcode
          */
         int hash ();
+
+        /**
+         * Gets the first value contained in this {@link SNode}
+         * @return the first value
+         */
+        KeyValueNode<K, V> first ();
 
         /**
          * Gets an Object associated with the given key
@@ -936,6 +1105,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 return new MultiSNode<K, V> (array);
             }
         }
+        
+        @Override
+        public KeyValueNode<K, V> first () {
+            return this;
+        }
 
         @Override
         public SNode<K, V> removed (final Object k) {
@@ -1012,6 +1186,15 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 }
             }
             return null;
+        }
+        
+        @Override
+        public KeyValueNode<K, V> first () {
+            if (this.content.length > 0) {
+                return this.content [0];
+            } else {
+                return null;
+            }
         }
 
         @Override
