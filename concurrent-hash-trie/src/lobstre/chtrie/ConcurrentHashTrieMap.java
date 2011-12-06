@@ -5,6 +5,7 @@ import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -113,18 +114,45 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
     }
 
     private final class Iter implements Iterator<Map.Entry<K, V>> {
-
+        private KeyValueNode<K, V> lastReturnedKVN = null;
+        private KeyValueNode<K, V> nextKVN = null;
+        private SNode<K, V> nextSNode = null;
         public Iter () {
+            advance ();
         }
 
         @Override
         public boolean hasNext () {
-            return false;
+            return nextKVN != null;
         }
 
         @Override
         public Entry<K, V> next () {
-            return null;
+            if (nextKVN == null) {
+                throw new NoSuchElementException();
+            }
+            lastReturnedKVN = nextKVN;
+            advance ();
+            return new Entry<K, V> () {
+                @Override
+                public K getKey () {
+                    return lastReturnedKVN.key;
+                }
+                
+                @Override
+                public V getValue () {
+                    return lastReturnedKVN.value;
+                }
+                
+                @Override
+                public V setValue (V value) {
+                    throw new UnsupportedOperationException ();
+                }
+            };
+        }
+
+        private void advance () {
+            
         }
 
         @Override
