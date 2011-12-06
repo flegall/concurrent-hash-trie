@@ -251,43 +251,41 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             }
         }
     }
-
-    // KeyValueNode<K, V> lookupNext (final KeyValueNode<K, V> kvn) {
-    // if (kvn != null) {
-    // notNullKey (kvn.key);
-    // final int hc = hash (kvn.key);
-    // while (true) {
-    // // Getting lookup result
-    // final Result<KeyValueNode<K, V>> res = ilookupNext (this.root, hc, kvn,
-    // 0, null);
-    // switch (res.type) {
-    // case FOUND:
-    // return res.result;
-    // case NOTFOUND:
-    // return null;
-    // case RESTART:
-    // continue;
-    // default:
-    // throw new RuntimeException ("Unexpected case: " + res.type);
-    // }
-    // }
-    // } else {
-    // while (true) {
-    // // Getting lookup result
-    // final Result<KeyValueNode<K, V>> res = ilookupFirst (this.root, 0, null);
-    // switch (res.type) {
-    // case FOUND:
-    // return res.result;
-    // case NOTFOUND:
-    // return null;
-    // case RESTART:
-    // continue;
-    // default:
-    // throw new RuntimeException ("Unexpected case: " + res.type);
-    // }
-    // }
-    // }
-    // }
+    
+    SNode<K, V> lookupNext (final SNode<K, V> current) {
+        if (current != null) {
+            final int hc = current.hash ();
+            while (true) {
+                // Getting lookup result
+                final Result<SNode<K, V>> res = ilookupNext (this.root, hc, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return res.result;
+                case NOTFOUND:
+                    return null;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
+            }
+        } else {
+            while (true) {
+                // Getting lookup result
+                final Result<SNode<K, V>> res = ilookupFirst (this.root, 0, null);
+                switch (res.type) {
+                case FOUND:
+                    return res.result;
+                case NOTFOUND:
+                    return null;
+                case RESTART:
+                    continue;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + res.type);
+                }
+            }
+        }
+    }
 
     private Result<V> ilookup (final INode i, final int hashcode, final K k, final int level, final INode parent) {
         final MainNode main = i.getMain ();
@@ -462,6 +460,96 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             return new Result<V> (ResultType.RESTART, null);
         }
         throw new RuntimeException ("Unexpected case: " + main);
+    }
+
+    private Result<SNode<K, V>> ilookupFirst (final INode i, final int level, final INode parent) {
+        final MainNode main = i.getMain ();
+
+        // Usual case
+        if (main instanceof CNode) {
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) main;
+            if (cn.bitmap == 0L) {
+                return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
+            } else {
+                return ipickupFirst (i, level, cn.array [0]);
+            }
+        }
+
+        // Cleaning up trie
+        if (main instanceof TNode) {
+            clean (parent, level - this.width);
+            return new Result<SNode<K, V>> (ResultType.RESTART, null);
+        }
+        throw new RuntimeException ("Unexpected case: " + main);
+    }
+
+    private Result<SNode<K, V>> ilookupNext (final INode i, int hashcode, int level, INode parent) {
+        final MainNode main = i.getMain ();
+
+        // Usual case
+        if (main instanceof CNode) {
+            @SuppressWarnings("unchecked")
+            final CNode<K, V> cn = (CNode<K, V>) main;
+            final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
+
+            // Asked for a hash not in trie
+            if (0L == (flagPos.flag & cn.bitmap)) {
+                return ipickupFirstSibling (i, level, cn, flagPos);
+            }
+            
+            final BranchNode an = cn.array [flagPos.position];
+            if (an instanceof INode) {
+                // Looking down
+                final INode sin = (INode) an;
+                final Result<SNode<K, V>> next = ilookupNext (sin, hashcode, level + this.width, i);
+                switch (next.type) {
+                case FOUND:
+                    return next;
+                case NOTFOUND:
+                    return ipickupFirstSibling (i, level, cn, flagPos);
+                case RESTART:
+                    return next;
+                default:
+                    throw new RuntimeException ("Unexpected case: " + next.type);
+                }
+            }
+            if (an instanceof SNode) {
+                return ipickupFirstSibling (i, level, cn, flagPos);
+            }
+        }
+
+        // Cleaning up trie
+        if (main instanceof TNode) {
+            clean (parent, level - this.width);
+            return new Result<SNode<K, V>> (ResultType.RESTART, null);
+        }
+        throw new RuntimeException ("Unexpected case: " + main);
+    }
+
+    private Result<SNode<K, V>> ipickupFirstSibling (final INode i, int level, final CNode<K, V> cn, final FlagPos flagPos) {
+        // Go directly to the next entry in the current node if possible
+        if (flagPos.position + 1 >= cn.array.length) {
+            return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
+        } else {
+            final BranchNode an = cn.array [flagPos.position + 1];
+            return ipickupFirst (i, level, an);
+        }
+    }
+
+    private Result<SNode<K, V>> ipickupFirst (final INode parent, int level, final BranchNode bn) {
+        if (bn instanceof INode) {
+            // Looking down
+            final INode sin = (INode) bn;
+            return ilookupFirst (sin, level + this.width, parent);
+        }
+        if (bn instanceof SNode) {
+            // Found the SNode
+            @SuppressWarnings("unchecked")
+            final SNode<K, V> sn = (SNode<K, V>) bn;
+            return new Result<SNode<K, V>> (ResultType.FOUND, sn);
+        }
+        throw new RuntimeException ("Unexpected case: " + bn);
     }
 
     private void cleanParent (final INode parent, final INode i, final int hashCode, final int level) {
