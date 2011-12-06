@@ -18,7 +18,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      * Width in bits
      */
     private final byte width;
-    
+
     /**
      * EntrySet
      */
@@ -113,10 +113,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
     }
 
     private final class Iter implements Iterator<Map.Entry<K, V>> {
-        
+
         public Iter () {
         }
-        
+
         @Override
         public boolean hasNext () {
             return false;
@@ -129,7 +129,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public void remove () {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException ();
         }
     }
 
@@ -251,42 +251,43 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             }
         }
     }
-    
-//    KeyValueNode<K, V> lookupNext (final KeyValueNode<K, V> kvn) {
-//        if (kvn != null) {
-//            notNullKey (kvn.key);
-//            final int hc = hash (kvn.key);
-//            while (true) {
-//                // Getting lookup result
-//                final Result<KeyValueNode<K, V>> res = ilookupNext (this.root, hc, kvn, 0, null);
-//                switch (res.type) {
-//                case FOUND:
-//                    return res.result;
-//                case NOTFOUND:
-//                    return null;
-//                case RESTART:
-//                    continue;
-//                default:
-//                    throw new RuntimeException ("Unexpected case: " + res.type);
-//                }
-//            }
-//        } else {
-//            while (true) {
-//                // Getting lookup result
-//                final Result<KeyValueNode<K, V>> res = ilookupFirst (this.root, 0, null);
-//                switch (res.type) {
-//                case FOUND:
-//                    return res.result;
-//                case NOTFOUND:
-//                    return null;
-//                case RESTART:
-//                    continue;
-//                default:
-//                    throw new RuntimeException ("Unexpected case: " + res.type);
-//                }
-//            }
-//        }
-//    }
+
+    // KeyValueNode<K, V> lookupNext (final KeyValueNode<K, V> kvn) {
+    // if (kvn != null) {
+    // notNullKey (kvn.key);
+    // final int hc = hash (kvn.key);
+    // while (true) {
+    // // Getting lookup result
+    // final Result<KeyValueNode<K, V>> res = ilookupNext (this.root, hc, kvn,
+    // 0, null);
+    // switch (res.type) {
+    // case FOUND:
+    // return res.result;
+    // case NOTFOUND:
+    // return null;
+    // case RESTART:
+    // continue;
+    // default:
+    // throw new RuntimeException ("Unexpected case: " + res.type);
+    // }
+    // }
+    // } else {
+    // while (true) {
+    // // Getting lookup result
+    // final Result<KeyValueNode<K, V>> res = ilookupFirst (this.root, 0, null);
+    // switch (res.type) {
+    // case FOUND:
+    // return res.result;
+    // case NOTFOUND:
+    // return null;
+    // case RESTART:
+    // continue;
+    // default:
+    // throw new RuntimeException ("Unexpected case: " + res.type);
+    // }
+    // }
+    // }
+    // }
 
     private Result<V> ilookup (final INode i, final int hashcode, final K k, final int level, final INode parent) {
         final MainNode main = i.getMain ();
@@ -740,6 +741,17 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return a copied {@link TNode} for this instance.
          */
         TNode<K, V> tombed ();
+
+        /**
+         * Gets the next {@link KeyValueNode} instance following the current
+         * one, or the first one if the current one is null.
+         * 
+         * @param current
+         *            the current {@link KeyValueNode} instance
+         * @return the next {@link KeyValueNode} in this {@link SNode}, null, if
+         *         no more {@link SNode} is after this one.
+         */
+        KeyValueNode<K, V> next (KeyValueNode<K, V> current);
     }
 
     static interface TNode<K, V> extends MainNode {
@@ -998,6 +1010,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         public SNode<K, V> removed (final Object k) {
             return null;
         }
+        
+        @Override
+        public KeyValueNode<K, V> next (final KeyValueNode<K, V> current) {
+            return current == null ? this : null;
+        }
     }
 
     /**
@@ -1118,7 +1135,25 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         public TNode<K, V> tombed () {
             return new MultiTNode<K, V> (this.content);
         }
-
+        
+        @Override
+        public KeyValueNode<K, V> next (final KeyValueNode<K, V> current) {
+            if (null == current) {
+                return this.content [0];
+            } else {
+                boolean found = false;
+                for (int i = 0; i < this.content.length; i++) {
+                    final KeyValueNode<K, V> kvn = this.content [i];
+                    if (found) {
+                        return kvn;
+                    }
+                    if (kvn.key.equals (current)) {
+                        found = true;
+                    }
+                }
+            }
+            return null;
+        }
     }
 
     /**
