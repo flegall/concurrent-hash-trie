@@ -119,12 +119,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         }
 
         @Override
-        public boolean hasNext () {
+        public final boolean hasNext () {
             return nextKVN != null;
         }
 
         @Override
-        public Entry<K, V> next () {
+        public final Entry<K, V> next () {
             if (nextKVN == null) {
                 throw new NoSuchElementException();
             }
@@ -149,11 +149,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         }
 
         @Override
-        public void remove () {
+        public final void remove () {
             throw new UnsupportedOperationException ();
         }
 
-        private void advance () {
+        private final void advance () {
             if (null == nextSNode) {
                 this.nextSNode = lookupNext (null);
             }
@@ -184,7 +184,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             return newIterator ();
         }
 
-        public boolean contains (final Object o) {
+        public final boolean contains (final Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
             }
@@ -195,7 +195,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             return v != null;
         }
 
-        public boolean remove (final Object o) {
+        public final boolean remove (final Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
             }
@@ -205,11 +205,15 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             return null != delete (k);
         }
 
-        public int size () {
-            throw new UnsupportedOperationException ();
+        public final int size () {
+            int size = 0;
+            for (final Iterator<?> i = iterator (); i.hasNext (); i.next ()) {
+                size++;
+            }
+            return size;
         }
 
-        public void clear () {
+        public final void clear () {
             ConcurrentHashTrieMap.this.clear ();
         }
     }

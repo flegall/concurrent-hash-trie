@@ -7,7 +7,6 @@ import java.util.Set;
 public class TestMapIterator {
     public static void main (String[] args) {
         for (int i = 0; i < 5000; i++) {
-//            System.out.println (i);
             final Map<Integer, Integer> bt = new ConcurrentHashTrieMap<Integer, Integer> ();
             for (int j = 0; j < i; j++) {
                 TestHelper.assertEquals (null, bt.put (Integer.valueOf (j), Integer.valueOf (j)));
@@ -16,8 +15,6 @@ public class TestMapIterator {
             final Set<Integer> set = new HashSet<Integer> ();
             for (final Map.Entry<Integer, Integer> e : bt.entrySet ()) {
                 set.add (e.getKey ());
-//                System.out.println ("K:" + e.getKey ());
-//                System.out.println ("V:" + e.getValue ());
                 count++;
             }
             for (final Integer j : set) {
@@ -28,6 +25,7 @@ public class TestMapIterator {
             }
             
             TestHelper.assertEquals (i, count);
+            TestHelper.assertEquals (i, bt.size ());
         }
     }
 }
