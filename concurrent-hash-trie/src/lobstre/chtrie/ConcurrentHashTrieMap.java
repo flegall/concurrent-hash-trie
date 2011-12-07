@@ -158,7 +158,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public final void remove () {
-            throw new UnsupportedOperationException ();
+            if (lastReturnedKVN == null) {
+                throw new IllegalStateException();
+            } else {
+                ConcurrentHashTrieMap.this.remove(lastReturnedKVN.key);
+                lastReturnedKVN = null;
+            }
         }
 
         private final void advance () {
