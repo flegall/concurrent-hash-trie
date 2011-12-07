@@ -131,6 +131,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             lastReturnedKVN = nextKVN;
             advance ();
             return new Entry<K, V> () {
+                private V overriden = null;
                 @Override
                 public K getKey () {
                     return lastReturnedKVN.key;
@@ -138,12 +139,19 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 
                 @Override
                 public V getValue () {
-                    return lastReturnedKVN.value;
+                    if (null == overriden) {
+                        return lastReturnedKVN.value;
+                    } else {
+                        return overriden;
+                    }
                 }
                 
                 @Override
                 public V setValue (V value) {
-                    throw new UnsupportedOperationException ();
+                    V old = getValue ();
+                    overriden = value;
+                    ConcurrentHashTrieMap.this.put (lastReturnedKVN.key, value);
+                    return old;
                 }
             };
         }
@@ -158,7 +166,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 this.nextSNode = lookupNext (null);
             }
             if (null != this.nextSNode) {
-                KeyValueNode<K, V> nextKV = this.nextSNode.next (this.nextKVN);
+                final KeyValueNode<K, V> nextKV = this.nextSNode.next (this.nextKVN);
                 if (null != nextKV) {
                     this.nextKVN = nextKV;
                 } else {
