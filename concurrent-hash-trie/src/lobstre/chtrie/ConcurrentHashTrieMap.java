@@ -113,10 +113,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         return entrySet;
     }
 
-    private final class Iter implements Iterator<Map.Entry<K, V>> {
-        private KeyValueNode<K, V> lastReturnedKVN = null;
-        private KeyValueNode<K, V> nextKVN = null;
-        private SNode<K, V> nextSNode = null;
+    final class Iter implements Iterator<Map.Entry<K, V>> {
         public Iter () {
             advance ();
         }
@@ -151,17 +148,38 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             };
         }
 
-        private void advance () {
-            
-        }
-
         @Override
         public void remove () {
             throw new UnsupportedOperationException ();
         }
+
+        private void advance () {
+            if (null == nextSNode) {
+                this.nextSNode = lookupNext (null);
+            }
+            if (null != this.nextSNode) {
+                KeyValueNode<K, V> nextKV = this.nextSNode.next (this.nextKVN);
+                if (null != nextKV) {
+                    this.nextKVN = nextKV;
+                } else {
+                    this.nextSNode = lookupNext (this.nextSNode);
+                    if (null != this.nextSNode) {
+                        this.nextKVN = this.nextSNode.next (null);
+                    } else {
+                        this.nextKVN = null;
+                    }
+                }
+            } else {
+                this.nextKVN = null;
+            }
+        }
+
+        private KeyValueNode<K, V> lastReturnedKVN = null;
+        private KeyValueNode<K, V> nextKVN = null;
+        private SNode<K, V> nextSNode = null;
     }
 
-    private final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+    final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator () {
             return newIterator ();
         }
