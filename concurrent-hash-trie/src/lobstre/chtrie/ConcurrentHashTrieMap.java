@@ -592,11 +592,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     private Result<SNode<K, V>> ipickupFirstSibling (final INode i, int level, final CNode<K, V> cn, final FlagPos flagPos) {
         // Go directly to the next entry in the current node if possible
-        if (flagPos.position + 1 >= cn.array.length) {
-            return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
-        } else {
+        if (flagPos.position + 1 < cn.array.length) {
             final BranchNode an = cn.array [flagPos.position + 1];
             return ipickupFirst (i, level, an);
+        } else {
+            return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
         }
     }
 
