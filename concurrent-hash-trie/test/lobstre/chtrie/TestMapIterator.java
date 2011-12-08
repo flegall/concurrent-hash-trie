@@ -3,6 +3,7 @@ package lobstre.chtrie;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class TestMapIterator {
@@ -27,6 +28,15 @@ public class TestMapIterator {
 
             TestHelper.assertEquals (i, count);
             TestHelper.assertEquals (i, bt.size ());
+            
+            for (final Iterator<Map.Entry<Integer, Integer>> iter = bt.entrySet ().iterator (); iter.hasNext ();) {
+                final Entry<Integer, Integer> e = iter.next ();
+                TestHelper.assertTrue (e.getValue () == bt.get (e.getKey ()));
+                e.setValue (e.getValue () + 1);
+                TestHelper.assertTrue (e.getValue () == e.getKey () + 1);
+                TestHelper.assertTrue (e.getValue () == bt.get (e.getKey ()));
+                e.setValue (e.getValue () - 1);
+            }
 
             for (final Iterator<Integer> iter = bt.keySet ().iterator (); iter.hasNext ();) {
                 final Integer k = iter.next ();
