@@ -1,8 +1,10 @@
 package lobstre.chtrie;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +26,12 @@ public class TestMultiThreadMapIterator {
             es.execute (new Runnable () {
                 @Override
                 public void run () {
+                    for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext (); ) {
+                        final Entry<Object, Object> e = i.next ();
+                        if (accepts (threadNo, nThreads, e.getKey ())) {
+                            e.setValue ("TEST");
+                        }
+                    }
                 }
             });
         }
@@ -34,6 +42,23 @@ public class TestMultiThreadMapIterator {
         } catch (final InterruptedException e) {
             e.printStackTrace ();
         }
+    }
+
+    protected static boolean accepts (int threadNo, int nThreads, Object key) {
+        int val = 0;
+        if (key instanceof Integer) {
+            val = ((Integer) key).intValue ();
+        }
+        if (key instanceof Character) {
+            val = Character.getNumericValue ((Character) key) + 1;
+        }
+        if (key instanceof Short) {
+            val = ((Integer) key).intValue () + 2;
+        }
+        if (key instanceof Byte) {
+            val = ((Byte) key).intValue () + 3;
+        }
+        return val % nThreads == threadNo;
     }
 
     private static Object[] getObjects (int j) {
