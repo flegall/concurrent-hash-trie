@@ -194,7 +194,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator () {
-            return newIterator ();
+            return new Iter ();
         }
 
         public final boolean contains (final Object o) {
@@ -229,10 +229,6 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         public final void clear () {
             ConcurrentHashTrieMap.this.clear ();
         }
-    }
-
-    private Iterator<Map.Entry<K, V>> newIterator () {
-        return new Iter ();
     }
 
     /**
@@ -1298,7 +1294,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                     if (found) {
                         return kvn;
                     }
-                    if (kvn.key.equals (current)) {
+                    if (kvn.key.equals (current.key)) {
                         found = true;
                     }
                 }
