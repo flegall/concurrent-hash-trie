@@ -4,12 +4,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 
 public class TestMapIterator {
     public static void main (final String[] args) {
-        for (int i = 0; i < 5000; i++) {
-            final Map<Integer, Integer> bt = new ConcurrentHashTrieMap<Integer, Integer> ();
+        for (int i = 0; i < 60 * 1000; i+= 400 + new Random ().nextInt (400)) {
+            System.out.println (i);
+            final Map<Integer, Integer> bt = new ConcurrentHashTrieMap <Integer, Integer> ();
             for (int j = 0; j < i; j++) {
                 TestHelper.assertEquals (null, bt.put (Integer.valueOf (j), Integer.valueOf (j)));
             }
@@ -44,6 +46,9 @@ public class TestMapIterator {
                 iter.remove ();
                 TestHelper.assertFalse (bt.containsKey (k));
             }
+            
+            TestHelper.assertEquals (0, bt.size ());
+            TestHelper.assertTrue (bt.isEmpty ());
         }
     }
 }

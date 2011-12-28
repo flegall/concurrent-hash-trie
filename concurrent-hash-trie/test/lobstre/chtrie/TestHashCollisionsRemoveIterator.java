@@ -19,9 +19,6 @@ public class TestHashCollisionsRemoveIterator {
             final Entry<Object, Object> e = i.next ();
             final Object key = e.getKey ();
             list.add (key);
-            if (!i.hasNext ()) {
-                System.out.println ("YES");
-            }
             i.remove ();
         }
 

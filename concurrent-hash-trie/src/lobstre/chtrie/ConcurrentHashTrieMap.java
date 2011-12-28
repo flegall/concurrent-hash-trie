@@ -628,8 +628,9 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 }
                 if (m instanceof TNode) {
                     @SuppressWarnings("unchecked")
-                    final CNode<K, V> ncn = pcn.updated (flagPos.position, ((TNode<K, V>) m).untombed ());
-                    if (parent.casMain (pcn, ncn)) {
+                    final SNode<K, V> untombed = ((TNode<K, V>) m).untombed ();
+                    final CNode<K, V> ncn = pcn.updated (flagPos.position, untombed);
+                    if (parent.casMain (pcn, toContracted (ncn, level))) {
                         return;
                     } else {
                         continue;
@@ -704,12 +705,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     static int hash (final Object key) {
         int h = key.hashCode ();
-        return h;
-//        // This function ensures that hashCodes that differ only by
-//        // constant multiples at each bit position have a bounded
-//        // number of collisions (approximately 8 at default load factor).
-//        h ^= h >>> 20 ^ h >>> 12;
-//        return h ^ h >>> 7 ^ h >>> 4;
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+        h ^= h >>> 20 ^ h >>> 12;
+        return h ^ h >>> 7 ^ h >>> 4;
     }
 
     /**
