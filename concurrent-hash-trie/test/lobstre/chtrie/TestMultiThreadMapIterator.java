@@ -105,7 +105,7 @@ public class TestMultiThreadMapIterator {
         return val % nThreads == threadNo;
     }
 
-    private static Object[] getObjects (final int j) {
+    static Object[] getObjects (final int j) {
         final Collection<Object> results = new LinkedList<Object> ();
         results.add (Integer.valueOf (j));
         if (j < 2000) {

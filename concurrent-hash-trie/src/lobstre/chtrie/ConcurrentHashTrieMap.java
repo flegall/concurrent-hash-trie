@@ -704,11 +704,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     static int hash (final Object key) {
         int h = key.hashCode ();
-        // This function ensures that hashCodes that differ only by
-        // constant multiples at each bit position have a bounded
-        // number of collisions (approximately 8 at default load factor).
-        h ^= h >>> 20 ^ h >>> 12;
-        return h ^ h >>> 7 ^ h >>> 4;
+        return h;
+//        // This function ensures that hashCodes that differ only by
+//        // constant multiples at each bit position have a bounded
+//        // number of collisions (approximately 8 at default load factor).
+//        h ^= h >>> 20 ^ h >>> 12;
+//        return h ^ h >>> 7 ^ h >>> 4;
     }
 
     /**
