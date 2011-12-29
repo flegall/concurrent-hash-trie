@@ -5,12 +5,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class TestMultiThreadMapIterator {
+    private static final int NTHREADS = 7;
+
     public static void main (final String[] args) {
         final Map<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         for (int j = 0; j < 50 * 1000; j++) {
@@ -20,17 +21,16 @@ public class TestMultiThreadMapIterator {
             }
         }
 
-        final int nThreads = 7;
         {
-            final ExecutorService es = Executors.newFixedThreadPool (7);
-            for (int i = 0; i < nThreads; i++) {
+            final ExecutorService es = Executors.newFixedThreadPool (NTHREADS);
+            for (int i = 0; i < NTHREADS; i++) {
                 final int threadNo = i;
                 es.execute (new Runnable () {
                     @Override
                     public void run () {
                         for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext ();) {
                             final Entry<Object, Object> e = i.next ();
-                            if (accepts (threadNo, nThreads, e.getKey ())) {
+                            if (accepts (threadNo, NTHREADS, e.getKey ())) {
                                 e.setValue ("TEST:" + threadNo);
                             }
                         }
@@ -47,40 +47,22 @@ public class TestMultiThreadMapIterator {
         }
 
         int count = 0;
-        final Map<Integer, Integer> counts = new TreeMap<Integer, Integer> ();
         for (final Object value : bt.values ()) {
             TestHelper.assertTrue (value instanceof String);
-            if (value instanceof String) {
-                final String[] splits = ((String) value).split (":");
-                TestHelper.assertEquals ("TEST", splits [0]);
-                final int slot = Integer.parseInt (splits [1]);
-                Integer sum = counts.get (slot);
-                if (null == sum) {
-                    sum = new Integer (0);
-                }
-                counts.put (slot, new Integer (sum.intValue () + 1));
-            }
             count++;
         }
         TestHelper.assertEquals (50000 + 2000 + 1000 + 100, count);
-        TestHelper.assertEquals (9223, counts.get (0).intValue ());
-        TestHelper.assertEquals (7316, counts.get (1).intValue ());
-        TestHelper.assertEquals (7313, counts.get (2).intValue ());
-        TestHelper.assertEquals (7314, counts.get (3).intValue ());
-        TestHelper.assertEquals (7313, counts.get (4).intValue ());
-        TestHelper.assertEquals (7311, counts.get (5).intValue ());
-        TestHelper.assertEquals (7310, counts.get (6).intValue ());
 
         {
-            final ExecutorService es = Executors.newFixedThreadPool (7);
-            for (int i = 0; i < nThreads; i++) {
+            final ExecutorService es = Executors.newFixedThreadPool (NTHREADS);
+            for (int i = 0; i < NTHREADS; i++) {
                 final int threadNo = i;
                 es.execute (new Runnable () {
                     @Override
                     public void run () {
                         for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext ();) {
                             final Entry<Object, Object> e = i.next ();
-                            if (accepts (threadNo, nThreads, e.getKey ())) {
+                            if (accepts (threadNo, NTHREADS, e.getKey ())) {
                                 i.remove ();
                             }
                         }

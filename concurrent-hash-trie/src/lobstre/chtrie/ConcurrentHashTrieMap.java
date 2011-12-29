@@ -161,7 +161,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             if (lastReturnedKVN == null) {
                 throw new IllegalStateException();
             } else {
-                ConcurrentHashTrieMap.this.remove(lastReturnedKVN.key);
+                ConcurrentHashTrieMap.this.remove (lastReturnedKVN.key);
                 lastReturnedKVN = null;
             }
         }
@@ -1048,14 +1048,23 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          *            the width (in power-of-two exponents)
          */
         CNode (final SNode<K, V> sn1, final SNode<K, V> sn2, final int level, final int width) {
-            final long flag1 = ConcurrentHashTrieMap.flag (sn1.hash (), level, width);
-            final long flag2 = ConcurrentHashTrieMap.flag (sn2.hash (), level, width);
-            // Make sure the two values are comparable by adding Long.MIN_VALUE so that 
-            // indexes 0 & -1 are written in the correct order : 0 and then -1
-            if (flag1 + Long.MIN_VALUE < flag2 + Long.MIN_VALUE) {
-                this.array = new BranchNode[] { sn1, sn2 };
+            final int h1 = sn1.hash ();
+            final int h2 = sn2.hash ();
+            final long flag1 = ConcurrentHashTrieMap.flag (h1, level, width);
+            final long flag2 = ConcurrentHashTrieMap.flag (h2, level, width);
+            if (flag1 != flag2) {
+                // Make sure the two values are comparable by adding Long.MIN_VALUE so that 
+                // indexes 0 & -1 are written in the correct order : 0 and then -1
+                if (flag1 + Long.MIN_VALUE < flag2 + Long.MIN_VALUE) {
+                    this.array = new BranchNode[] { sn1, sn2 };
+                } else {
+                    this.array = new BranchNode[] { sn2, sn1 };
+                }
             } else {
-                this.array = new BranchNode[] { sn2, sn1 };
+                // Else goes down one level and create sub nodes
+                this.array = new BranchNode[] {
+                        new INode (
+                                new CNode<K, V> (sn1, sn2, level+width, width))};
             }
             this.bitmap = flag1 | flag2;
         }
