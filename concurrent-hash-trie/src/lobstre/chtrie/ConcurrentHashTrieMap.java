@@ -149,6 +149,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 @Override
                 public V setValue (V value) {
                     V old = getValue ();
+                    notNullValue (value);
                     overriden = value;
                     ConcurrentHashTrieMap.this.put (lastReturnedKVN.key, value);
                     return old;
