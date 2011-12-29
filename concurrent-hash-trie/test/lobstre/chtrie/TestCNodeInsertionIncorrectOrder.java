@@ -2,7 +2,7 @@ package lobstre.chtrie;
 
 import java.util.Map;
 
-public class TestSpecialValues {
+public class TestCNodeInsertionIncorrectOrder {
 
     public static void main (final String[] args) {
         final Map<Object, Object> map = new ConcurrentHashTrieMap<Object, Object> ();
