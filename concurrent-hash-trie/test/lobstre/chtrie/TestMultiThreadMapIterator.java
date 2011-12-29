@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +53,8 @@ public class TestMultiThreadMapIterator {
             count++;
         }
         TestHelper.assertEquals (50000 + 2000 + 1000 + 100, count);
+        
+        final ConcurrentHashMap<Object, Object> removed = new ConcurrentHashMap<Object, Object> ();
 
         {
             final ExecutorService es = Executors.newFixedThreadPool (NTHREADS);
@@ -62,8 +65,16 @@ public class TestMultiThreadMapIterator {
                     public void run () {
                         for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext ();) {
                             final Entry<Object, Object> e = i.next ();
-                            if (accepts (threadNo, NTHREADS, e.getKey ())) {
+                            Object key = e.getKey ();
+                            if (accepts (threadNo, NTHREADS, key)) {
+                                if (null == bt.get (key)) {
+                                    System.out.println (key);
+                                }
                                 i.remove ();
+                                if (null != bt.get (key)) {
+                                    System.out.println (key);
+                                }
+                                removed.put (key, key);
                             }
                         }
                     }
@@ -82,6 +93,11 @@ public class TestMultiThreadMapIterator {
         for (final Object value : bt.keySet ()) {
             value.toString ();
             count++;
+        }
+        for (final Object o : bt.keySet ()) {
+            if (!removed.contains (bt.get (o))) {
+                System.out.println ();
+            }
         }
         TestHelper.assertEquals (0, count);
         TestHelper.assertEquals (0, bt.size ());
