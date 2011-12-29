@@ -71,11 +71,29 @@ public class TestMultiThreadMapIterator {
         TestHelper.assertEquals (7311, counts.get (5).intValue ());
         TestHelper.assertEquals (7310, counts.get (6).intValue ());
 
-        for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext ();) {
-            final Entry<Object, Object> e = i.next ();
-            final Object key = e.getKey ();
-            key.toString ();
-            i.remove ();
+        {
+            final ExecutorService es = Executors.newFixedThreadPool (7);
+            for (int i = 0; i < nThreads; i++) {
+                final int threadNo = i;
+                es.execute (new Runnable () {
+                    @Override
+                    public void run () {
+                        for (final Iterator<Map.Entry<Object, Object>> i = bt.entrySet ().iterator (); i.hasNext ();) {
+                            final Entry<Object, Object> e = i.next ();
+                            if (accepts (threadNo, nThreads, e.getKey ())) {
+                                i.remove ();
+                            }
+                        }
+                    }
+                });
+            }
+
+            es.shutdown ();
+            try {
+                es.awaitTermination (3600L, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                e.printStackTrace ();
+            }
         }
 
         count = 0;
