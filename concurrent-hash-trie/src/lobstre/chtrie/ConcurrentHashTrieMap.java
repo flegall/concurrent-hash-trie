@@ -999,7 +999,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          */
         public CNode<K, V> removed (final FlagPos flagPos) {
             final BranchNode[] narr = ConcurrentHashTrieMap.removed (BranchNode.class, this.array, flagPos.position);
-            return new CNode<K, V> (narr, this.bitmap - flagPos.flag);
+            return new CNode<K, V> (narr, this.bitmap ^ flagPos.flag);
         }
 
         /**
