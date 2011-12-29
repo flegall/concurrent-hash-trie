@@ -6,11 +6,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class TestMultiThreadAddDelete {
+    private static final int RETRIES = 1;
     private static final int N_THREADS = 7;
-    private static final int COUNT = 10 * 1000;
+    private static final int COUNT =  50 * 1000;
 
     public static void main (final String[] args) {
-        for (int j = 0; j < 20; j++) {
+        for (int j = 0; j < RETRIES; j++) {
             final Map<Object, Object> bt = new ConcurrentHashTrieMap <Object, Object> ();
             
             {
