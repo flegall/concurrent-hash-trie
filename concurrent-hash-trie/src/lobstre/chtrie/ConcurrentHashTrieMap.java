@@ -1331,7 +1331,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 @SuppressWarnings("unchecked")
                 final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.inserted (
                         this.content, 
-                        new KeyValueNode [this.content.length], 
+                        new KeyValueNode [this.content.length + 1], 
                         new KeyValueNode<K, V> (k, v), 
                         this.content.length);
                 array = ar;
