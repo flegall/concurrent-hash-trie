@@ -159,12 +159,18 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
 
     @Override
     public boolean replace (Object key, Object oldValue, Object newValue) {
-        return false;
+        @SuppressWarnings("unchecked")
+        final V value = insert ((K) key, (V)newValue,
+                new Constraint<V> (ConstraintType.REPLACE_IF_MAPPED_TO, (V) oldValue));
+        return null != value && value.equals (oldValue);
     }
 
     @Override
     public V replace (Object key, Object value) {
-        return null;
+        @SuppressWarnings("unchecked")
+        final V result = insert ((K) key, (V)value,
+                new Constraint<V> (ConstraintType.REPLACE_IF_MAPPED, null));
+        return result;
     }
 
     final class Iter implements Iterator<Map.Entry<K, V>> {
@@ -312,6 +318,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                 continue;
             case REJECTED:
                 if (ConstraintType.PUT_IF_ABSENT == constraint.type) {
+                    return res.result;
+                } else if (ConstraintType.REPLACE_IF_MAPPED == constraint.type) {
+                    return null;
+                } else if (ConstraintType.REPLACE_IF_MAPPED_TO == constraint.type) {
                     return res.result;
                 } else {
                     throw new RuntimeException ("Unexpected case: " + constraint.type);
@@ -475,7 +485,14 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             final FlagPos flagPos = flagPos (hashcode, level, cn.bitmap, this.width);
 
             // Asked for a hash not in trie, let's insert it
-            if (0L == (flagPos.flag & cn.bitmap)) {
+            if (0L == (flagPos.flag & cn.bitmap)) { 
+                
+                // Check constraints
+                if (    ConstraintType.REPLACE_IF_MAPPED_TO == constraint.type ||
+                        ConstraintType.REPLACE_IF_MAPPED == constraint.type) {
+                    return new Result<V> (ResultType.REJECTED, null);
+                }
+                    
                 final SNode<K, V> snode = new SingletonSNode<K, V> (k, v);
                 final CNode<K, V> ncn = cn.inserted (flagPos, snode);
                 if (i.casMain (main, ncn)) {
@@ -491,15 +508,24 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                 final INode sin = (INode) an;
                 return iinsert (sin, hashcode, k, v, level + this.width, i, constraint);
             }
+            
             if (an instanceof SNode) {
                 @SuppressWarnings("unchecked")
                 final SNode<K, V> sn = (SNode<K, V>) an;
+                
                 // Found the hash locally, let's see if it matches
                 if (sn.hash () == hashcode) {
                     final V previousValue = sn.get (k);
+                    
+                    // Check constraints
                     if (ConstraintType.PUT_IF_ABSENT == constraint.type && null != previousValue) {
                         return new Result<V> (ResultType.REJECTED, previousValue);
                     }
+                    if (ConstraintType.REPLACE_IF_MAPPED_TO == constraint.type && 
+                            !previousValue.equals (constraint.to)) {
+                        return new Result<V> (ResultType.REJECTED, previousValue);
+                    }
+                    
                     final SNode<K, V> nsn = sn.put (k, v);
                     final CNode<K, V> ncn = cn.updated (flagPos.position, nsn);
                     if (i.casMain (main, ncn)) {
@@ -508,6 +534,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                         return new Result<V> (ResultType.RESTART, null);
                     }
                 } else {
+                 // Check constraints
+                    if (    ConstraintType.REPLACE_IF_MAPPED_TO == constraint.type ||
+                            ConstraintType.REPLACE_IF_MAPPED == constraint.type) {
+                        return new Result<V> (ResultType.REJECTED, null);
+                    }
+                    
                     final SNode<K, V> nsn = new SingletonSNode<K, V> (k, v);
                     // Creates a sub-level
                     final CNode<K, V> scn = new CNode<K, V> (sn, nsn, level + this.width, this.width);
