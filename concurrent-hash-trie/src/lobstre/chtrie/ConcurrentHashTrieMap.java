@@ -347,7 +347,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         }
     }
 
-    private Result<V> ilookup (final INode i, final int hashcode, final K k, final int level, final INode parent) {
+    private Result<V> ilookup (final INode i, 
+            final int hashcode, 
+            final K k, 
+            final int level, 
+            final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -392,7 +396,13 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<V> iinsert (final INode i, final int hashcode, final K k, final V v, final int level, final INode parent) {
+    private Result<V> iinsert (final INode i, 
+            final int hashcode, 
+            final K k, 
+            final V v, 
+            final int level, 
+            final INode parent) {
+        
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -532,7 +542,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             if (cn.bitmap == 0L) {
                 return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
             } else {
-                return ipickupFirst (i, level, cn.array [0]);
+                return ipickupFirst (cn.array [0], level, i);
             }
         }
 
@@ -544,7 +554,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<SNode<K, V>> ilookupNext (final INode i, int hashcode, int level, INode parent) {
+    private Result<SNode<K, V>> ilookupNext (final INode i, 
+            final int hashcode, 
+            final int level, 
+            final INode parent) {
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -555,7 +568,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
             // Asked for a hash not in trie
             if (0L == (flagPos.flag & cn.bitmap)) {
-                return ipickupFirstSibling (i, level, cn, flagPos, 0);
+                return ipickupFirstSibling (cn, flagPos, 0, level, i);
             }
             
             final BranchNode an = cn.array [flagPos.position];
@@ -567,7 +580,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 case FOUND:
                     return next;
                 case NOTFOUND:
-                    return ipickupFirstSibling (i, level, cn, flagPos, 1);
+                    return ipickupFirstSibling (cn, flagPos, 1, level, i);
                 case RESTART:
                     return next;
                 default:
@@ -578,7 +591,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 @SuppressWarnings("unchecked")
                 final SNode<K, V> sn = (SNode<K, V>) an;
                 if (hashcode + Integer.MIN_VALUE >= sn.hash () + Integer.MIN_VALUE) {
-                    return ipickupFirstSibling (i, level, cn, flagPos, 1);
+                    return ipickupFirstSibling (cn, flagPos, 1, level, i);
                 } else {
                     return new Result<SNode<K, V>> (ResultType.FOUND, sn);
                 }
@@ -593,17 +606,22 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<SNode<K, V>> ipickupFirstSibling (final INode i, int level, final CNode<K, V> cn, final FlagPos flagPos, int offset) {
+    private Result<SNode<K, V>> ipickupFirstSibling (final CNode<K, V> cn, 
+            final FlagPos flagPos, 
+            final int offset, 
+            final int level, 
+            final INode parent) {
+        
         // Go directly to the next entry in the current node if possible
         if (flagPos.position + offset < cn.array.length) {
             final BranchNode an = cn.array [flagPos.position + offset];
-            return ipickupFirst (i, level, an);
+            return ipickupFirst (an, level, parent);
         } else {
             return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);
         }
     }
 
-    private Result<SNode<K, V>> ipickupFirst (final INode parent, int level, final BranchNode bn) {
+    private Result<SNode<K, V>> ipickupFirst (final BranchNode bn, int level, final INode parent) {
         if (bn instanceof INode) {
             // Looking down
             final INode sin = (INode) bn;
@@ -952,7 +970,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         /**
          * Atomic Updater for the INode.main field
          */
-        private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
+        private static final AtomicReferenceFieldUpdater<INode, MainNode> INODE_UPDATER = 
+                AtomicReferenceFieldUpdater.newUpdater (INode.class, MainNode.class, "main");
         /**
          * The {@link MainNode} instance
          */
@@ -975,7 +994,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode<K, V> inserted (final FlagPos flagPos, final SNode<K, V> snode) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.inserted (BranchNode.class, this.array, flagPos.position, snode);
+            final BranchNode[] narr = ConcurrentHashTrieMap.inserted (BranchNode.class, 
+                    this.array, 
+                    flagPos.position, 
+                    snode);
             return new CNode<K, V> (narr, flagPos.flag | this.bitmap);
         }
 
@@ -991,7 +1013,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode<K, V> updated (final int position, final BranchNode bn) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.updated (BranchNode.class, this.array, position, bn);
+            final BranchNode[] narr = ConcurrentHashTrieMap.updated (BranchNode.class, 
+                    this.array, 
+                    position, 
+                    bn);
             return new CNode<K, V> (narr, this.bitmap);
         }
 
@@ -1005,7 +1030,9 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          *         designated by flag & a position has been removed.
          */
         public CNode<K, V> removed (final FlagPos flagPos) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.removed (BranchNode.class, this.array, flagPos.position);
+            final BranchNode[] narr = ConcurrentHashTrieMap.removed (BranchNode.class, 
+                    this.array, 
+                    flagPos.position);
             return new CNode<K, V> (narr, this.bitmap ^ flagPos.flag);
         }
 
@@ -1167,7 +1194,9 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 return new SingletonSNode<K, V> (k, v);
             } else {
                 @SuppressWarnings("unchecked")
-                final KeyValueNode<K, V>[] array = new KeyValueNode[] { new KeyValueNode<K, V> (this.key, this.value), new KeyValueNode<K, V> (k, v), };
+                final KeyValueNode<K, V>[] array = new KeyValueNode[] { 
+                    new KeyValueNode<K, V> (this.key, this.value), 
+                    new KeyValueNode<K, V> (k, v), };
                 return new MultiSNode<K, V> (array);
             }
         }
@@ -1268,11 +1297,19 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             final KeyValueNode<K, V>[] array;
             if (index >= 0) {
                 @SuppressWarnings("unchecked")
-                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.updated (KeyValueNode.class, this.content, index, new KeyValueNode<K, V> (k, v));
+                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.updated (
+                        KeyValueNode.class, 
+                        this.content, 
+                        index, 
+                        new KeyValueNode<K, V> (k, v));
                 array = ar;
             } else {
                 @SuppressWarnings("unchecked")
-                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.inserted (KeyValueNode.class, this.content, this.content.length, new KeyValueNode<K, V> (k, v));
+                final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.inserted (
+                        KeyValueNode.class, 
+                        this.content, 
+                        this.content.length, 
+                        new KeyValueNode<K, V> (k, v));
                 array = ar;
             }
 
