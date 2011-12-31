@@ -555,7 +555,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
             // Asked for a hash not in trie
             if (0L == (flagPos.flag & cn.bitmap)) {
-                return ipickupFirstSibling (i, level, cn, flagPos);
+                return ipickupFirstSibling (i, level, cn, flagPos, 0);
             }
             
             final BranchNode an = cn.array [flagPos.position];
@@ -567,7 +567,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 case FOUND:
                     return next;
                 case NOTFOUND:
-                    return ipickupFirstSibling (i, level, cn, flagPos);
+                    return ipickupFirstSibling (i, level, cn, flagPos, 1);
                 case RESTART:
                     return next;
                 default:
@@ -575,7 +575,13 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 }
             }
             if (an instanceof SNode) {
-                return ipickupFirstSibling (i, level, cn, flagPos);
+                @SuppressWarnings("unchecked")
+                final SNode<K, V> sn = (SNode<K, V>) an;
+                if (hashcode + Integer.MIN_VALUE >= sn.hash () + Integer.MIN_VALUE) {
+                    return ipickupFirstSibling (i, level, cn, flagPos, 1);
+                } else {
+                    return new Result<SNode<K, V>> (ResultType.FOUND, sn);
+                }
             }
         }
 
@@ -587,10 +593,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<SNode<K, V>> ipickupFirstSibling (final INode i, int level, final CNode<K, V> cn, final FlagPos flagPos) {
+    private Result<SNode<K, V>> ipickupFirstSibling (final INode i, int level, final CNode<K, V> cn, final FlagPos flagPos, int offset) {
         // Go directly to the next entry in the current node if possible
-        if (flagPos.position + 1 < cn.array.length) {
-            final BranchNode an = cn.array [flagPos.position + 1];
+        if (flagPos.position + offset < cn.array.length) {
+            final BranchNode an = cn.array [flagPos.position + offset];
             return ipickupFirst (i, level, an);
         } else {
             return new Result<SNode<K, V>> (ResultType.NOTFOUND, null);

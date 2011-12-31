@@ -96,7 +96,7 @@ public class TestMultiThreadMapIterator {
         }
         for (final Object o : bt.keySet ()) {
             if (!removed.contains (bt.get (o))) {
-                System.out.println ();
+                System.out.println ("Not removed: " + o);
             }
         }
         TestHelper.assertEquals (0, count);
