@@ -6,9 +6,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
+public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
     /**
      * Root node of the trie
      */
@@ -118,7 +119,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     @Override
     public V put (final K key, final V value) {
-        return insert (key, value);
+        return insert (key, value, new Constraint<V> (ConstraintType.NONE, null));
     }
 
     @Override
@@ -143,6 +144,27 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
     @Override
     public Set<Map.Entry<K, V>> entrySet () {
         return entrySet;
+    }
+
+    @Override
+    public V putIfAbsent (final K key, final V value) {
+        return insert (key, value, 
+                new Constraint<V> (ConstraintType.PUT_IF_ABSENT, null));
+    }
+
+    @Override
+    public boolean remove (Object key, Object value) {
+        return false;
+    }
+
+    @Override
+    public boolean replace (Object key, Object oldValue, Object newValue) {
+        return false;
+    }
+
+    @Override
+    public V replace (Object key, Object value) {
+        return null;
     }
 
     final class Iter implements Iterator<Map.Entry<K, V>> {
@@ -271,14 +293,16 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
      *            a key {@link Object}
      * @param value
      *            a value Object
+     * @param constraint
+     *            the {@link Constraint} value
      * @return the previous value associated to key
      */
-    V insert (final K key, final V value) {
+    V insert (final K key, final V value, final Constraint<V> constraint) {
         notNullKey (key);
         notNullValue (value);
         final int hc = hash (key);
         while (true) {
-            final Result<V> res = iinsert (this.root, hc, key, value, 0, null);
+            final Result<V> res = iinsert (this.root, hc, key, value, 0, null, constraint);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -286,6 +310,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                 return null;
             case RESTART:
                 continue;
+            case REJECTED:
+                if (ConstraintType.PUT_IF_ABSENT == constraint.type) {
+                    return res.result;
+                } else {
+                    throw new RuntimeException ("Unexpected case: " + constraint.type);
+                }
             default:
                 throw new RuntimeException ("Unexpected case: " + res.type);
             }
@@ -433,7 +463,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             final K k, 
             final V v, 
             final int level, 
-            final INode parent) {
+            final INode parent, 
+            final Constraint<V> constraint) {
         
         final MainNode main = i.getMain ();
 
@@ -458,17 +489,21 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                return iinsert (sin, hashcode, k, v, level + this.width, i);
+                return iinsert (sin, hashcode, k, v, level + this.width, i, constraint);
             }
             if (an instanceof SNode) {
                 @SuppressWarnings("unchecked")
                 final SNode<K, V> sn = (SNode<K, V>) an;
                 // Found the hash locally, let's see if it matches
                 if (sn.hash () == hashcode) {
+                    final V previousValue = sn.get (k);
+                    if (ConstraintType.PUT_IF_ABSENT == constraint.type && null != previousValue) {
+                        return new Result<V> (ResultType.REJECTED, previousValue);
+                    }
                     final SNode<K, V> nsn = sn.put (k, v);
                     final CNode<K, V> ncn = cn.updated (flagPos.position, nsn);
                     if (i.casMain (main, ncn)) {
-                        return new Result<V> (ResultType.FOUND, sn.get (k));
+                        return new Result<V> (ResultType.FOUND, previousValue);
                     } else {
                         return new Result<V> (ResultType.RESTART, null);
                     }
@@ -760,6 +795,11 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    static <V> Constraint<V> noConstraint () {
+        return (Constraint<V>) NO_CONSTRAINT;
+    }
+
     static int hash (final Object key) {
         int h = key.hashCode ();
         // This function ensures that hashCodes that differ only by
@@ -861,9 +901,30 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
         final long flag = 1L << subHash;
         return flag;
     }
+    
+    static enum ConstraintType {
+        NONE, 
+        PUT_IF_ABSENT, 
+        REMOVE_IF_MAPPED_TO, 
+        REPLACE_IF_MAPPED_TO,
+        REPLACE_IF_MAPPED
+    }
+    
+    static class Constraint<V> {
+        public Constraint (final ConstraintType type, final V to) {
+            this.type = type;
+            this.to = to;
+        }
+
+        public final ConstraintType type; 
+        public final V to;
+    }
 
     static enum ResultType {
-        FOUND, NOTFOUND, RESTART
+        FOUND, 
+        NOTFOUND,
+        REJECTED,
+        RESTART
     }
 
     static class Result<V> {
@@ -1435,4 +1496,6 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          */
         public final int position;
     }
+    
+    private static final Constraint<Object> NO_CONSTRAINT = new Constraint<Object> (ConstraintType.NONE, null);
 }

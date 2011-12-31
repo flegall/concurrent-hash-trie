@@ -58,46 +58,46 @@ public class TestHashCollisions {
     }
 
     private static void insertChars (final ConcurrentHashTrieMap<Object, Object> bt) {
-        TestHelper.assertEquals (null, bt.insert ('a', 'a'));
-        TestHelper.assertEquals (null, bt.insert ('b', 'b'));
-        TestHelper.assertEquals (null, bt.insert ('c', 'c'));
-        TestHelper.assertEquals (null, bt.insert ('d', 'd'));
-        TestHelper.assertEquals (null, bt.insert ('e', 'e'));
+        TestHelper.assertEquals (null, bt.insert ('a', 'a', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ('b', 'b', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ('c', 'c', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ('d', 'd', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ('e', 'e', ConcurrentHashTrieMap.noConstraint ()));
 
-        TestHelper.assertEquals ('a', bt.insert ('a', 'a'));
-        TestHelper.assertEquals ('b', bt.insert ('b', 'b'));
-        TestHelper.assertEquals ('c', bt.insert ('c', 'c'));
-        TestHelper.assertEquals ('d', bt.insert ('d', 'd'));
-        TestHelper.assertEquals ('e', bt.insert ('e', 'e'));
+        TestHelper.assertEquals ('a', bt.insert ('a', 'a', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ('b', bt.insert ('b', 'b', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ('c', bt.insert ('c', 'c', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ('d', bt.insert ('d', 'd', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ('e', bt.insert ('e', 'e', ConcurrentHashTrieMap.noConstraint ()));
     }
 
     private static void insertStrings (final ConcurrentHashTrieMap<Object, Object> bt) {
-        TestHelper.assertEquals (null, bt.insert ("a", "a"));
-        TestHelper.assertEquals (null, bt.insert ("b", "b"));
-        TestHelper.assertEquals (null, bt.insert ("c", "c"));
-        TestHelper.assertEquals (null, bt.insert ("d", "d"));
-        TestHelper.assertEquals (null, bt.insert ("e", "e"));
+        TestHelper.assertEquals (null, bt.insert ("a", "a", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ("b", "b", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ("c", "c", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ("d", "d", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (null, bt.insert ("e", "e", ConcurrentHashTrieMap.noConstraint ()));
 
-        TestHelper.assertEquals ("a", bt.insert ("a", "a"));
-        TestHelper.assertEquals ("b", bt.insert ("b", "b"));
-        TestHelper.assertEquals ("c", bt.insert ("c", "c"));
-        TestHelper.assertEquals ("d", bt.insert ("d", "d"));
-        TestHelper.assertEquals ("e", bt.insert ("e", "e"));
+        TestHelper.assertEquals ("a", bt.insert ("a", "a", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ("b", bt.insert ("b", "b", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ("c", bt.insert ("c", "c", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ("d", bt.insert ("d", "d", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals ("e", bt.insert ("e", "e", ConcurrentHashTrieMap.noConstraint ()));
     }
 
     private static void insertBytes (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
-            TestHelper.assertEquals (null, bt.insert (bigB, bigB));
-            TestHelper.assertEquals (bigB, bt.insert (bigB, bigB));
+            TestHelper.assertEquals (null, bt.insert (bigB, bigB, ConcurrentHashTrieMap.noConstraint ()));
+            TestHelper.assertEquals (bigB, bt.insert (bigB, bigB, ConcurrentHashTrieMap.noConstraint ()));
         }
     }
 
     private static void insertInts (final ConcurrentHashTrieMap<Object, Object> bt) {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
-            TestHelper.assertEquals (null, bt.insert (bigI, bigI));
-            TestHelper.assertEquals (bigI, bt.insert (bigI, bigI));
+            TestHelper.assertEquals (null, bt.insert (bigI, bigI, ConcurrentHashTrieMap.noConstraint ()));
+            TestHelper.assertEquals (bigI, bt.insert (bigI, bigI, ConcurrentHashTrieMap.noConstraint ()));
         }
     }
 

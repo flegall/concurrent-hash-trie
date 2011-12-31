@@ -16,7 +16,7 @@ public class TestMultiThreadInserts {
                 public void run () {
                     for (int j = 0; j < 500 * 1000; j++) {
                         if (j % nThreads == threadNo) {
-                            bt.insert (Integer.valueOf (j), Integer.valueOf (j));
+                            bt.insert (Integer.valueOf (j), Integer.valueOf (j), ConcurrentHashTrieMap.noConstraint ());
                         }
                     }
                 }

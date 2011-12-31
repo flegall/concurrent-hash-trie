@@ -1,11 +1,12 @@
 package lobstre.chtrie;
 
+
 public class TestDelete {
     public static void main (final String[] args) {
         final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
 
         for (int i = 0; i < 10000; i++) {
-            TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i)));
+            TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i), ConcurrentHashTrieMap.noConstraint ()));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (Integer.valueOf (i), lookup);
         }
@@ -29,11 +30,11 @@ public class TestDelete {
         bt.delete (v);
         Object foundV = bt.lookup (v);
         TestHelper.assertEquals (null, foundV);
-        TestHelper.assertEquals (null, bt.insert (v, v));
+        TestHelper.assertEquals (null, bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
         foundV = bt.lookup (v);
         TestHelper.assertEquals (v, foundV);
         
-        TestHelper.assertEquals (v, bt.insert (v, Integer.valueOf (-1)));
-        TestHelper.assertEquals (Integer.valueOf (-1), bt.insert (v, v));
+        TestHelper.assertEquals (v, bt.insert (v, Integer.valueOf (-1), ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertEquals (Integer.valueOf (-1), bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
     }
 }
