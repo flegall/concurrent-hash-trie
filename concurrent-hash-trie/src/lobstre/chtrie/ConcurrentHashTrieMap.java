@@ -1,6 +1,5 @@
 package lobstre.chtrie;
 
-import java.lang.reflect.Array;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -739,65 +738,57 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
 
     /**
      * Returns a copy an array with an updated value at a certain position.
-     * 
-     * @param clazz
-     *            the Array's {@link Class}
-     * @param array
+     * @param src
      *            the source array
+     * @param dst 
+     *            the destination array
+     * @param t
+     *            the updated value
      * @param position
      *            the position
-     * @param n
-     *            the updated value
      * @return an updated copy of the source array
      */
-    static <T> T[] updated (final Class<T> clazz, final T[] array, final int position, final T n) {
-        @SuppressWarnings("unchecked")
-        final T[] narr = (T[]) Array.newInstance (clazz, array.length);
-        System.arraycopy (array, 0, narr, 0, array.length);
-        narr [position] = n;
-        return narr;
+    static <T> T[] updated (final T[] src, final T[] dst, final T t, final int position) {
+        System.arraycopy (src, 0, dst, 0, src.length);
+        dst [position] = t;
+        return dst;
     }
 
     /**
      * Returns a copy an {@link BranchNode} array with an inserted
      * {@link BranchNode} value at a certain position.
-     * 
-     * @param clazz
-     *            the Array's {@link Class}
-     * @param array
-     *            the source {@link BranchNode} array
+     * @param src
+     *            the source array
+     * @param dst 
+     *            the destination arrau
+     * @param t
+     *            the inserted {@link BranchNode} value
      * @param position
      *            the position
-     * @param n
-     *            the inserted {@link BranchNode} value
      * @return an updated copy of the source {@link BranchNode} array
      */
-    static <T> T[] inserted (final Class<T> clazz, final T[] array, final int position, final T n) {
-        @SuppressWarnings("unchecked")
-        final T[] narr = (T[]) Array.newInstance (clazz, array.length + 1);
-        System.arraycopy (array, 0, narr, 0, position);
-        System.arraycopy (array, position, narr, position + 1, array.length - position);
-        narr [position] = n;
-        return narr;
+    static <T> T[] inserted (final T[] src, T[] dst, final T t, final int position) {
+        System.arraycopy (src, 0, dst, 0, position);
+        System.arraycopy (src, position, dst, position + 1, src.length - position);
+        dst [position] = t;
+        return dst;
     }
 
     /**
      * Returns a copy of an array with a removed value at a certain position.
      * 
-     * @param clazz
-     *            the Array's {@link Class}
-     * @param array
+     * @param src
      *            the source array
+     * @param dst
+     *            the destination array
      * @param position
      *            the position
      * @return an updated copy of the source array
      */
-    static <T> T[] removed (final Class<T> clazz, final T[] array, final int position) {
-        @SuppressWarnings("unchecked")
-        final T[] narr = (T[]) Array.newInstance (clazz, array.length - 1);
-        System.arraycopy (array, 0, narr, 0, position);
-        System.arraycopy (array, position + 1, narr, position, array.length - position - 1);
-        return narr;
+    static <T> T[] removed (final T[] src, T[] dst, final int position) {
+        System.arraycopy (src, 0, dst, 0, position);
+        System.arraycopy (src, position + 1, dst, position, src.length - position - 1);
+        return dst;
     }
 
     /**
@@ -994,10 +985,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return a copy of this {@link CNode} instance with the inserted node.
          */
         public CNode<K, V> inserted (final FlagPos flagPos, final SNode<K, V> snode) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.inserted (BranchNode.class, 
-                    this.array, 
-                    flagPos.position, 
-                    snode);
+            final BranchNode[] narr = ConcurrentHashTrieMap.inserted (this.array, 
+                    new BranchNode [this.array.length + 1], 
+                    snode, 
+                    flagPos.position);
             return new CNode<K, V> (narr, flagPos.flag | this.bitmap);
         }
 
@@ -1013,10 +1004,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          * @return a copy of this {@link CNode} instance with the updated node.
          */
         public CNode<K, V> updated (final int position, final BranchNode bn) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.updated (BranchNode.class, 
-                    this.array, 
-                    position, 
-                    bn);
+            final BranchNode[] narr = ConcurrentHashTrieMap.updated (this.array, 
+                    new BranchNode [this.array.length], 
+                    bn, 
+                    position);
             return new CNode<K, V> (narr, this.bitmap);
         }
 
@@ -1030,8 +1021,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
          *         designated by flag & a position has been removed.
          */
         public CNode<K, V> removed (final FlagPos flagPos) {
-            final BranchNode[] narr = ConcurrentHashTrieMap.removed (BranchNode.class, 
-                    this.array, 
+            final BranchNode[] narr = ConcurrentHashTrieMap.removed (this.array, 
+                    new BranchNode[this.array.length - 1], 
                     flagPos.position);
             return new CNode<K, V> (narr, this.bitmap ^ flagPos.flag);
         }
@@ -1298,18 +1289,18 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             if (index >= 0) {
                 @SuppressWarnings("unchecked")
                 final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.updated (
-                        KeyValueNode.class, 
                         this.content, 
-                        index, 
-                        new KeyValueNode<K, V> (k, v));
+                        new KeyValueNode [this.content.length], 
+                        new KeyValueNode<K, V> (k, v), 
+                        index);
                 array = ar;
             } else {
                 @SuppressWarnings("unchecked")
                 final KeyValueNode<K, V>[] ar = ConcurrentHashTrieMap.inserted (
-                        KeyValueNode.class, 
                         this.content, 
-                        this.content.length, 
-                        new KeyValueNode<K, V> (k, v));
+                        new KeyValueNode [this.content.length], 
+                        new KeyValueNode<K, V> (k, v), 
+                        this.content.length);
                 array = ar;
             }
 
@@ -1326,7 +1317,10 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
                         return new SingletonSNode<K, V> (kvn.key, kvn.value);
                     } else {
                         @SuppressWarnings("unchecked")
-                        final KeyValueNode<K, V>[] narr = ConcurrentHashTrieMap.removed (KeyValueNode.class, this.content, i);
+                        final KeyValueNode<K, V>[] narr = ConcurrentHashTrieMap.removed (
+                                this.content, 
+                                new KeyValueNode [this.content.length - 1], 
+                                i);
                         return new MultiSNode<K, V> (narr);
                     }
                 }
