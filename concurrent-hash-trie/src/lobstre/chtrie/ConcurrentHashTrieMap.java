@@ -56,6 +56,39 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> {
             this.width = (byte) width;
         }
     }
+    
+    /**
+     * Builds a {@link Map} based on the mapping of another {@link Map}.
+     * 
+     * @param map
+     *            a {@link Map}
+     */
+    public ConcurrentHashTrieMap (final Map<K, V> map) {
+        this ();
+        this.putAll (map);
+    }
+    
+    /**
+     * Builds a {@link Map} based on the mapping of another {@link Map}.
+     * 
+     * @param map
+     *            a {@link Map} 
+     * @param width the Trie width in power-of-two
+     *            exponents. Values are expected between between 1 & 6, other
+     *            values will be clamped.
+     *            <p>
+     *            The width defines the "speed" of the trie:
+     *            <ul>
+     *            <li>A value of 1: gives an actual width of two items per
+     *            level, hence the trie is O(Log2(N))</li>
+     *            <li>A value of 6: gives an actual width of 64 items per level,
+     *            hence the trie is O(Log64(N)</li>
+     *            </ul>
+     */
+    public ConcurrentHashTrieMap (final Map<K, V> map, final int width) {
+        this (width);
+        this.putAll (map);
+    }
 
     @Override
     public boolean isEmpty () {
