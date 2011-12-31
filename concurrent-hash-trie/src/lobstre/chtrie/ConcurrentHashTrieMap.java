@@ -126,7 +126,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     public V remove (final Object key) {
         @SuppressWarnings("unchecked")
         final K k = (K) key;
-        return delete (k);
+        return delete (k, ConcurrentHashTrieMap.<V>noConstraint ());
     }
 
     @Override
@@ -154,15 +154,20 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
 
     @Override
     public boolean remove (Object key, Object value) {
-        return false;
+        @SuppressWarnings("unchecked")
+        final K k = (K) key;
+        @SuppressWarnings("unchecked")
+        final V previous = delete (k, 
+                new Constraint<V> (ConstraintType.REMOVE_IF_MAPPED_TO, (V) value));
+        return previous != null && value.equals (previous);
     }
 
     @Override
     public boolean replace (Object key, Object oldValue, Object newValue) {
         @SuppressWarnings("unchecked")
-        final V value = insert ((K) key, (V)newValue,
+        final V previous = insert ((K) key, (V)newValue,
                 new Constraint<V> (ConstraintType.REPLACE_IF_MAPPED_TO, (V) oldValue));
-        return null != value && value.equals (oldValue);
+        return null != previous && previous.equals (oldValue);
     }
 
     @Override
@@ -276,7 +281,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             @SuppressWarnings("unchecked")
             final Map.Entry<K, V> e = (Map.Entry<K, V>) o;
             final K k = e.getKey ();
-            return null != delete (k);
+            return null != delete (k, ConcurrentHashTrieMap.<V>noConstraint ());
         }
 
         public final int size () {
@@ -363,14 +368,16 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
      * 
      * @param key
      *            the key Object
+     * @param constraint
+     *            the {@link Constraint} value
      * @return the removed value if removed was performed, null otherwise
      */
-    V delete (final K key) {
+    V delete (final K key, final Constraint<V> constraint) {
         notNullKey (key);
         final int hc = hash (key);
         while (true) {
             // Getting remove result
-            final Result<V> res = idelete (this.root, hc, key, 0, null);
+            final Result<V> res = idelete (this.root, hc, key, 0, null, constraint);
             switch (res.type) {
             case FOUND:
                 return res.result;
@@ -378,6 +385,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                 return null;
             case RESTART:
                 continue;
+            case REJECTED:
+                if (ConstraintType.REMOVE_IF_MAPPED_TO == constraint.type) {
+                    return res.result;
+                } else {
+                    throw new RuntimeException ("Unexpected case: " + constraint.type);
+                }
             default:
                 throw new RuntimeException ("Unexpected case: " + res.type);
             }
@@ -562,7 +575,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
         throw new RuntimeException ("Unexpected case: " + main);
     }
 
-    private Result<V> idelete (final INode i, final int hashcode, final K k, final int level, final INode parent) {
+    private Result<V> idelete (final INode i, 
+            final int hashcode, 
+            final K k, 
+            final int level, 
+            final INode parent, 
+            final Constraint<V> constraint) {
         final MainNode main = i.getMain ();
 
         // Usual case
@@ -581,7 +599,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             if (an instanceof INode) {
                 // Looking down
                 final INode sin = (INode) an;
-                res = idelete (sin, hashcode, k, level + this.width, i);
+                res = idelete (sin, hashcode, k, level + this.width, i, constraint);
             }
             if (an instanceof SNode) {
                 // Found the hash locally, let's see if it matches
@@ -589,8 +607,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                 final SNode<K, V> sn = (SNode<K, V>) an;
                 if (sn.hash () == hashcode) {
                     final V previous = sn.get (k);
+                    // Checking constraint first
                     if (null == previous) {
                         res = new Result<V> (ResultType.NOTFOUND, null);
+                    } else if (ConstraintType.REMOVE_IF_MAPPED_TO == constraint.type &&
+                            !constraint.to.equals (previous)) {
+                        res = new Result<V> (ResultType.REJECTED, previous);
                     } else {
                         final SNode<K, V> nsn = sn.removed (k);
                         final MainNode replacement;
@@ -937,9 +959,9 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     static enum ConstraintType {
         NONE, 
         PUT_IF_ABSENT, 
-        REMOVE_IF_MAPPED_TO, 
         REPLACE_IF_MAPPED_TO,
-        REPLACE_IF_MAPPED
+        REPLACE_IF_MAPPED,
+        REMOVE_IF_MAPPED_TO, 
     }
     
     static class Constraint<V> {

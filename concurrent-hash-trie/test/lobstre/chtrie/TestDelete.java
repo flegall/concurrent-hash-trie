@@ -16,7 +16,7 @@ public class TestDelete {
         checkAddInsert (bt, 8437);
         
         for (int i = 0; i < 10000; i++) {
-            boolean removed = null != bt.delete (Integer.valueOf (i));
+            boolean removed = null != bt.delete (Integer.valueOf (i), ConcurrentHashTrieMap.noConstraint ());
             TestHelper.assertEquals (Boolean.TRUE, Boolean.valueOf (removed));
             final Object lookup = bt.lookup (Integer.valueOf (i));
             TestHelper.assertEquals (null, lookup);
@@ -27,7 +27,7 @@ public class TestDelete {
 
     private static void checkAddInsert (final ConcurrentHashTrieMap<Object, Object> bt, int k) {
         final Integer v = Integer.valueOf (k);
-        bt.delete (v);
+        bt.delete (v, ConcurrentHashTrieMap.noConstraint ());
         Object foundV = bt.lookup (v);
         TestHelper.assertEquals (null, foundV);
         TestHelper.assertEquals (null, bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));

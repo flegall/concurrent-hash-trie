@@ -108,17 +108,17 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null != bt.lookup ('d'));
         TestHelper.assertTrue (null != bt.lookup ('e'));
 
-        TestHelper.assertTrue (null != bt.delete ('a'));
-        TestHelper.assertTrue (null != bt.delete ('b'));
-        TestHelper.assertTrue (null != bt.delete ('c'));
-        TestHelper.assertTrue (null != bt.delete ('d'));
-        TestHelper.assertTrue (null != bt.delete ('e'));
+        TestHelper.assertTrue (null != bt.delete ('a', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ('b', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ('c', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ('d', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ('e', ConcurrentHashTrieMap.noConstraint ()));
 
-        TestHelper.assertFalse (null != bt.delete ('a'));
-        TestHelper.assertFalse (null != bt.delete ('b'));
-        TestHelper.assertFalse (null != bt.delete ('c'));
-        TestHelper.assertFalse (null != bt.delete ('d'));
-        TestHelper.assertFalse (null != bt.delete ('e'));
+        TestHelper.assertFalse (null != bt.delete ('a', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ('b', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ('c', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ('d', ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ('e', ConcurrentHashTrieMap.noConstraint ()));
 
         TestHelper.assertTrue (null == bt.lookup ('a'));
         TestHelper.assertTrue (null == bt.lookup ('b'));
@@ -134,17 +134,17 @@ public class TestHashCollisions {
         TestHelper.assertTrue (null != bt.lookup ("d"));
         TestHelper.assertTrue (null != bt.lookup ("e"));
 
-        TestHelper.assertTrue (null != bt.delete ("a"));
-        TestHelper.assertTrue (null != bt.delete ("b"));
-        TestHelper.assertTrue (null != bt.delete ("c"));
-        TestHelper.assertTrue (null != bt.delete ("d"));
-        TestHelper.assertTrue (null != bt.delete ("e"));
+        TestHelper.assertTrue (null != bt.delete ("a", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ("b", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ("c", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ("d", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertTrue (null != bt.delete ("e", ConcurrentHashTrieMap.noConstraint ()));
 
-        TestHelper.assertFalse (null != bt.delete ("a"));
-        TestHelper.assertFalse (null != bt.delete ("b"));
-        TestHelper.assertFalse (null != bt.delete ("c"));
-        TestHelper.assertFalse (null != bt.delete ("d"));
-        TestHelper.assertFalse (null != bt.delete ("e"));
+        TestHelper.assertFalse (null != bt.delete ("a", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ("b", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ("c", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ("d", ConcurrentHashTrieMap.noConstraint ()));
+        TestHelper.assertFalse (null != bt.delete ("e", ConcurrentHashTrieMap.noConstraint ()));
 
         TestHelper.assertTrue (null == bt.lookup ("a"));
         TestHelper.assertTrue (null == bt.lookup ("b"));
@@ -157,8 +157,8 @@ public class TestHashCollisions {
         for (int i = 0; i < 128; i++) {
             final Integer bigI = Integer.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup (bigI));
-            TestHelper.assertTrue (null != bt.delete (bigI));
-            TestHelper.assertFalse (null != bt.delete (bigI));
+            TestHelper.assertTrue (null != bt.delete (bigI, ConcurrentHashTrieMap.noConstraint ()));
+            TestHelper.assertFalse (null != bt.delete (bigI, ConcurrentHashTrieMap.noConstraint ()));
             TestHelper.assertTrue (null == bt.lookup (bigI));
         }
     }
@@ -167,8 +167,8 @@ public class TestHashCollisions {
         for (byte i = 0; i < 128 && i >= 0; i++) {
             final Byte bigB = Byte.valueOf (i);
             TestHelper.assertTrue (null != bt.lookup (bigB));
-            TestHelper.assertTrue (null != bt.delete (bigB));
-            TestHelper.assertFalse (null != bt.delete (bigB));
+            TestHelper.assertTrue (null != bt.delete (bigB, ConcurrentHashTrieMap.noConstraint ()));
+            TestHelper.assertFalse (null != bt.delete (bigB, ConcurrentHashTrieMap.noConstraint ()));
             TestHelper.assertTrue (null == bt.lookup (bigB));
         }
     }
