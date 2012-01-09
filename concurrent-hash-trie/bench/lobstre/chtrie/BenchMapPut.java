@@ -26,6 +26,7 @@ public class BenchMapPut {
                 objects.add (o);
             }
         }
+        Collections.shuffle (objects);
         
         final long begin = System.nanoTime ();
         for (final Object o : objects) {
