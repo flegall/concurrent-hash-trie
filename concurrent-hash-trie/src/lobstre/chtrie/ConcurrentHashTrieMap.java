@@ -153,7 +153,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     }
 
     @Override
-    public boolean remove (Object key, Object value) {
+    public boolean remove (final Object key, final Object value) {
         @SuppressWarnings("unchecked")
         final K k = (K) key;
         @SuppressWarnings("unchecked")
@@ -163,7 +163,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     }
 
     @Override
-    public boolean replace (Object key, Object oldValue, Object newValue) {
+    public boolean replace (final Object key, final Object oldValue, final Object newValue) {
         @SuppressWarnings("unchecked")
         final V previous = insert ((K) key, (V)newValue,
                 new Constraint<V> (ConstraintType.REPLACE_IF_MAPPED_TO, (V) oldValue));
@@ -171,7 +171,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     }
 
     @Override
-    public V replace (Object key, Object value) {
+    public V replace (final Object key, final Object value) {
         @SuppressWarnings("unchecked")
         final V result = insert ((K) key, (V)value,
                 new Constraint<V> (ConstraintType.REPLACE_IF_MAPPED, null));
@@ -212,8 +212,8 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
                 }
                 
                 @Override
-                public V setValue (V value) {
-                    V old = getValue ();
+                public V setValue (final V value) {
+                    final V old = getValue ();
                     notNullValue (value);
                     overriden = value;
                     ConcurrentHashTrieMap.this.put (lastReturnedKVN.key, value);
@@ -259,10 +259,12 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
     }
 
     final class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        @Override
         public Iterator<Map.Entry<K, V>> iterator () {
             return new Iter ();
         }
 
+        @Override
         public final boolean contains (final Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
@@ -274,6 +276,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             return v != null;
         }
 
+        @Override
         public final boolean remove (final Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
@@ -284,6 +287,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             return null != delete (k, ConcurrentHashTrieMap.<V>noConstraint ());
         }
 
+        @Override
         public final int size () {
             int size = 0;
             for (final Iterator<?> i = iterator (); i.hasNext (); i.next ()) {
@@ -292,6 +296,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
             return size;
         }
 
+        @Override
         public final void clear () {
             ConcurrentHashTrieMap.this.clear ();
         }
@@ -742,7 +747,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
         }
     }
 
-    private Result<SNode<K, V>> ipickupFirst (final BranchNode bn, int level, final INode parent) {
+    private Result<SNode<K, V>> ipickupFirst (final BranchNode bn, final int level, final INode parent) {
         if (bn instanceof INode) {
             // Looking down
             final INode sin = (INode) bn;
@@ -894,7 +899,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
      *            the position
      * @return an updated copy of the source {@link BranchNode} array
      */
-    static <T> T[] inserted (final T[] src, T[] dst, final T t, final int position) {
+    static <T> T[] inserted (final T[] src, final T[] dst, final T t, final int position) {
         System.arraycopy (src, 0, dst, 0, position);
         System.arraycopy (src, position, dst, position + 1, src.length - position);
         dst [position] = t;
@@ -912,7 +917,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
      *            the position
      * @return an updated copy of the source array
      */
-    static <T> T[] removed (final T[] src, T[] dst, final int position) {
+    static <T> T[] removed (final T[] src, final T[] dst, final int position) {
         System.arraycopy (src, 0, dst, 0, position);
         System.arraycopy (src, position + 1, dst, position, src.length - position - 1);
         return dst;
@@ -1370,6 +1375,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
         /**
          * @return a copied {@link SNode} of this instance
          */
+        @Override
         public SNode<K, V> untombed () {
             return new SingletonSNode<K, V> (this.key, this.value);
         }
