@@ -14,6 +14,7 @@ public class BenchMapReplace {
         BenchMapReplace.bench (Collections.synchronizedMap (new HashMap<Object, Object> ()));
         BenchMapReplace.bench (new ConcurrentHashMap<Object, Object> ());
         BenchMapReplace.bench (BenchMapHelper.getTreeMap ());
+        BenchMapMultiThreadPut.bench (Collections.synchronizedMap (BenchMapHelper.getTreeMap ()));
         BenchMapReplace.bench (BenchMapHelper.getSkipListMap ());
     }
 

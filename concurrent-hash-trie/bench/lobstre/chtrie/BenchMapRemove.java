@@ -14,6 +14,7 @@ public class BenchMapRemove {
         BenchMapRemove.bench (Collections.synchronizedMap (new HashMap<Object, Object> ()));
         BenchMapRemove.bench (new ConcurrentHashMap<Object, Object> ());
         BenchMapRemove.bench (BenchMapHelper.getTreeMap ());
+        BenchMapMultiThreadPut.bench (Collections.synchronizedMap (BenchMapHelper.getTreeMap ()));
         BenchMapRemove.bench (BenchMapHelper.getSkipListMap ());
     }
 
