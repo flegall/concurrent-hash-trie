@@ -29,18 +29,18 @@ public class BenchMapMultiThreadPut {
             }
         }
         Collections.shuffle (objects);
-        
+
         final CountDownLatch cdl = new CountDownLatch (NTHREADS);
-        
+
         final long begin = System.nanoTime ();
         for (int i = 0; i < NTHREADS; i++) {
             final int threadId = i;
-            new Thread (new Runnable() {
+            new Thread (new Runnable () {
                 @Override
                 public void run () {
                     for (int j = 0; j < objects.size (); j++) {
                         if (j % NTHREADS == threadId) {
-                            Object o = objects.get (j);
+                            final Object o = objects.get (j);
                             map.put (o, o);
                         }
                     }
@@ -50,12 +50,12 @@ public class BenchMapMultiThreadPut {
         }
         try {
             cdl.await ();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (final InterruptedException e) {
+            e.printStackTrace ();
             return;
         }
         final long end = System.nanoTime ();
-        
+
         BenchMapHelper.logTime (map, count, begin, end);
     }
 }
