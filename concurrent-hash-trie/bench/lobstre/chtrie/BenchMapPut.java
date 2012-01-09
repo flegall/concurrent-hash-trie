@@ -28,13 +28,13 @@ public class BenchMapPut {
             }
         }
         Collections.shuffle (objects);
-        
+
         final long begin = System.nanoTime ();
         for (final Object o : objects) {
             map.put (o, o);
         }
         final long end = System.nanoTime ();
-        
+
         BenchMapHelper.logTime (map, count, begin, end);
     }
 }

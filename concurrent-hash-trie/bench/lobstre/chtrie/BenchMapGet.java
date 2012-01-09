@@ -29,13 +29,13 @@ public class BenchMapGet {
             }
         }
         Collections.shuffle (objects);
-        
+
         final long begin = System.nanoTime ();
         for (final Object o : objects) {
             map.get (o);
         }
         final long end = System.nanoTime ();
-        
+
         BenchMapHelper.logTime (map, count, begin, end);
     }
 }
