@@ -1,11 +1,13 @@
 # About 
 An attempt to implement a concurrent hash trie in java, mostly done in order to learn a bit more low-level concurrent data structures.
 
-Idea + implementation techniques found in these reports written by Aleksandar Prokopec: 
+Idea + implementation techniques found in these reports written by Aleksandar Prokopec:
+
 * http://infoscience.epfl.ch/record/166908/files/ctries-techreport.pdf
 * http://lamp.epfl.ch/~prokopec/ctries-snapshot.pdf
 
 Implementation status : 
+
 * The given implementation is complete (implements all the ConcurrentMap & Iterator methods), and passes all the tests I've written.
 * Iteration and bulk operations (.putAll (), EntrySet.removeAll (), EntrySet.retainAll (), toArray ()) are weakly consistent as in ConcurrentHashMap & ConcurrentSkipListMap.
 * It doesn't perform that well, seems like 2 to 6 times slower than synchronized maps or ConcurrentHashMap implementations (depending on the operations). 
