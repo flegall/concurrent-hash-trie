@@ -11,7 +11,7 @@ Implementation status :
 * The given implementation is complete (implements all the ConcurrentMap & Iterator methods), and passes all the tests I've written.
 * Iteration and bulk operations (.putAll (), EntrySet.removeAll (), EntrySet.retainAll (), toArray ()) are weakly consistent as in ConcurrentHashMap & ConcurrentSkipListMap.
 * It doesn't perform that well, seems like 2 to 6 times slower than synchronized maps or ConcurrentHashMap implementations (depending on the operations). 
-* It's a bit faster than a synchronized TreeMap or or ConcurrentSkipListMap : around 30% to 80% faster)
+* It's a bit faster than a synchronized TreeMap or or ConcurrentSkipListMap : around 30% to 80% faster
 
 # License
 Licensed under the ZLib License :
