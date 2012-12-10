@@ -1,14 +1,19 @@
 package lobstre.chtrie;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 
 public class TestDelete {
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
 
         for (int i = 0; i < 10000; i++) {
-            TestHelper.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i), ConcurrentHashTrieMap.noConstraint ()));
+            Assert.assertEquals (null, bt.insert (Integer.valueOf (i), Integer.valueOf (i), ConcurrentHashTrieMap.noConstraint ()));
             final Object lookup = bt.lookup (Integer.valueOf (i));
-            TestHelper.assertEquals (Integer.valueOf (i), lookup);
+            Assert.assertEquals (Integer.valueOf (i), lookup);
         }
         
         checkAddInsert (bt, 536);
@@ -17,9 +22,9 @@ public class TestDelete {
         
         for (int i = 0; i < 10000; i++) {
             boolean removed = null != bt.delete (Integer.valueOf (i), ConcurrentHashTrieMap.noConstraint ());
-            TestHelper.assertEquals (Boolean.TRUE, Boolean.valueOf (removed));
+            Assert.assertEquals (Boolean.TRUE, Boolean.valueOf (removed));
             final Object lookup = bt.lookup (Integer.valueOf (i));
-            TestHelper.assertEquals (null, lookup);
+            Assert.assertEquals (null, lookup);
         }
 
         bt.toString ();
@@ -29,12 +34,12 @@ public class TestDelete {
         final Integer v = Integer.valueOf (k);
         bt.delete (v, ConcurrentHashTrieMap.noConstraint ());
         Object foundV = bt.lookup (v);
-        TestHelper.assertEquals (null, foundV);
-        TestHelper.assertEquals (null, bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
+        Assert.assertEquals (null, foundV);
+        Assert.assertEquals (null, bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
         foundV = bt.lookup (v);
-        TestHelper.assertEquals (v, foundV);
+        Assert.assertEquals (v, foundV);
         
-        TestHelper.assertEquals (v, bt.insert (v, Integer.valueOf (-1), ConcurrentHashTrieMap.noConstraint ()));
-        TestHelper.assertEquals (Integer.valueOf (-1), bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
+        Assert.assertEquals (v, bt.insert (v, Integer.valueOf (-1), ConcurrentHashTrieMap.noConstraint ()));
+        Assert.assertEquals (Integer.valueOf (-1), bt.insert (v, v, ConcurrentHashTrieMap.noConstraint ()));
     }
 }

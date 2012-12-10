@@ -2,8 +2,13 @@ package lobstre.chtrie;
 
 import java.util.Map;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 public class TestHashCollisionsRemove {
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         final Map<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         int count = 50000;
         for (int j = 0; j < count; j++) {
@@ -20,7 +25,7 @@ public class TestHashCollisionsRemove {
             }
         }
 
-        TestHelper.assertEquals (0, bt.size ());
-        TestHelper.assertTrue (bt.isEmpty ());
+        Assert.assertEquals (0, bt.size ());
+        Assert.assertTrue (bt.isEmpty ());
     }
 }

@@ -10,10 +10,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 public class TestMultiThreadMapIterator {
     private static final int NTHREADS = 7;
 
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         final Map<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         for (int j = 0; j < 50 * 1000; j++) {
             final Object[] objects = getObjects (j);
@@ -49,10 +54,10 @@ public class TestMultiThreadMapIterator {
 
         int count = 0;
         for (final Object value : bt.values ()) {
-            TestHelper.assertTrue (value instanceof String);
+            Assert.assertTrue (value instanceof String);
             count++;
         }
-        TestHelper.assertEquals (50000 + 2000 + 1000 + 100, count);
+        Assert.assertEquals (50000 + 2000 + 1000 + 100, count);
         
         final ConcurrentHashMap<Object, Object> removed = new ConcurrentHashMap<Object, Object> ();
 
@@ -99,9 +104,9 @@ public class TestMultiThreadMapIterator {
                 System.out.println ("Not removed: " + o);
             }
         }
-        TestHelper.assertEquals (0, count);
-        TestHelper.assertEquals (0, bt.size ());
-        TestHelper.assertTrue (bt.isEmpty ());
+        Assert.assertEquals (0, count);
+        Assert.assertEquals (0, bt.size ());
+        Assert.assertTrue (bt.isEmpty ());
     }
 
     protected static boolean accepts (final int threadNo, final int nThreads, final Object key) {

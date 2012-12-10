@@ -5,12 +5,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 public class TestMultiThreadAddDelete {
     private static final int RETRIES = 1;
     private static final int N_THREADS = 7;
     private static final int COUNT =  50 * 1000;
 
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         for (int j = 0; j < RETRIES; j++) {
             final Map<Object, Object> bt = new ConcurrentHashTrieMap <Object, Object> ();
             
@@ -37,8 +42,8 @@ public class TestMultiThreadAddDelete {
                 }
             }
             
-            TestHelper.assertEquals (COUNT, bt.size ());
-            TestHelper.assertFalse (bt.isEmpty ());
+            Assert.assertEquals (COUNT, bt.size ());
+            Assert.assertFalse (bt.isEmpty ());
             
             {
                 final ExecutorService es = Executors.newFixedThreadPool (N_THREADS);
@@ -64,8 +69,8 @@ public class TestMultiThreadAddDelete {
             }
             
             
-            TestHelper.assertEquals (0, bt.size ());
-            TestHelper.assertTrue (bt.isEmpty ());
+            Assert.assertEquals (0, bt.size ());
+            Assert.assertTrue (bt.isEmpty ());
             
             {
                 final ExecutorService es = Executors.newFixedThreadPool (N_THREADS);
@@ -101,11 +106,11 @@ public class TestMultiThreadAddDelete {
                 }
             }
             
-            TestHelper.assertEquals (0, bt.size ());
+            Assert.assertEquals (0, bt.size ());
             if (!bt.isEmpty ()) {
                 System.out.println ();
             }
-            TestHelper.assertTrue (bt.isEmpty ());
+            Assert.assertTrue (bt.isEmpty ());
         }
     }
 }
