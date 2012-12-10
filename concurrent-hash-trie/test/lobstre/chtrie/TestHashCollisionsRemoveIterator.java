@@ -6,8 +6,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 public class TestHashCollisionsRemoveIterator {
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         final Map<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
         int count = 50000;
         for (int j = 0; j < count; j++) {
@@ -22,7 +27,7 @@ public class TestHashCollisionsRemoveIterator {
             i.remove ();
         }
 
-        TestHelper.assertEquals (0, bt.size ());
-        TestHelper.assertTrue (bt.isEmpty ());
+        Assert.assertEquals (0, bt.size ());
+        Assert.assertTrue (bt.isEmpty ());
     }
 }

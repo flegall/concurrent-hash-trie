@@ -4,8 +4,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 public class TestMultiThreadInserts {
-    public static void main (final String[] args) {
+    @Test
+    public void test () {
         final int nThreads = 2;
         final ExecutorService es = Executors.newFixedThreadPool (nThreads);
         final ConcurrentHashTrieMap<Object, Object> bt = new ConcurrentHashTrieMap<Object, Object> ();
@@ -32,7 +37,7 @@ public class TestMultiThreadInserts {
         
         for (int j = 0; j < 500 * 1000; j++) {
             final Object lookup = bt.lookup (Integer.valueOf (j));
-            TestHelper.assertEquals (Integer.valueOf (j), lookup);
+            Assert.assertEquals (Integer.valueOf (j), lookup);
         }
     }
 }
