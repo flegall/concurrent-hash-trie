@@ -1095,7 +1095,7 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
          * @return the {@link MainNode}
          */
         public MainNode getMain () {
-            return INODE_UPDATER.get (this);
+            return this.main;
         }
 
         /**
@@ -1119,7 +1119,6 @@ public class ConcurrentHashTrieMap<K, V> extends AbstractMap<K, V> implements Co
         /**
          * The {@link MainNode} instance
          */
-        @SuppressWarnings("unused")
         private volatile MainNode main;
     }
 
