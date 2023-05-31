@@ -1,0 +1,32 @@
+public V computeIfAbsent(K key,
+                         Function<? super K, ? extends V> mappingFunction) {
+    Objects.requireNonNull(mappingFunction);
+    int length = key.length();
+    TrieMapNode<K, V> node = root;
+    for (int i = 0; i < length; i++) {
+        char c = key.charAt(i);
+        node = node.getChild(c);
+        if (node == null) {
+            // Create a new node if one doesn't exist
+            node = new TrieMapNode<>(c, null);
+            root.putChild(c, node);
+        }
+    }
+    V value = node.getValue();
+    if (value == null) {
+        // Compute the value using the mapping function
+        value = mappingFunction.apply(key);
+        node.setValue(value);
+    }
+    return value;
+}
+Explanation:
+
+The method takes two parameters: the key to look up and the function to compute the value if the key is absent.
+The method first checks if the mapping function is not null.
+It then iterates through the characters of the key to traverse the trie and find the node corresponding to the key.
+If a node doesn't exist, it creates a new node and adds it to the trie.
+It then gets the value of the node.
+If the value is null, it computes the value using the mapping function and sets the value of the node.
+It returns the value.
+Note: This implementation assumes that the TrieMapNode class has a method called getChild(char c) that returns the child node corresponding to the character c, and a method called putChild(char c, TrieMapNode<K, V> node) that adds the child node to the node.
